@@ -8,6 +8,7 @@ type ToolbarProps = {
   edgeCount: number;
   onExport: () => void;
   onImport: (file: File) => void | Promise<void>;
+  onOpenSpecification: () => void;
 };
 
 const nodeButtons: Array<{ kind: NodeKind; label: string }> = [
@@ -24,6 +25,7 @@ export function Toolbar({
   edgeCount,
   onExport,
   onImport,
+  onOpenSpecification,
 }: ToolbarProps) {
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -46,7 +48,10 @@ export function Toolbar({
           <span className="node-count">
             Nodes: {nodeCount} / Edges: {edgeCount}
           </span>
-          <div className="project-actions" aria-label="Graph JSON">
+          <div className="project-actions" aria-label="Project actions">
+            <button type="button" className="project-action" onClick={onOpenSpecification}>
+              仕様
+            </button>
             <button type="button" className="project-action" onClick={onExport}>
               書出
             </button>
