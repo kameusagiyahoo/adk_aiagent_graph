@@ -40,13 +40,18 @@ body {
 }
 
 .toolbar {
+  display: grid;
+  gap: 10px;
+  padding: 10px 14px 12px;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid #dfe5ef;
+}
+
+.toolbar__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid #dfe5ef;
+  gap: 12px;
 }
 
 .toolbar h1 {
@@ -55,43 +60,74 @@ body {
 }
 
 .toolbar__eyebrow {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #667085;
 }
 
-.toolbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .node-count {
-  font-size: 13px;
+  flex: 0 0 auto;
+  font-size: 12px;
   color: #667085;
 }
 
-.primary-button {
-  min-height: 42px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 12px;
-  background: #172033;
-  color: #fff;
-  font-weight: 700;
+.node-palette {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 1px 1px 2px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.node-palette::-webkit-scrollbar {
+  display: none;
+}
+
+.node-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d7deea;
+  border-radius: 11px;
+  background: #fff;
+  color: #25324a;
+  font-size: 12px;
+  font-weight: 750;
   cursor: pointer;
   touch-action: manipulation;
 }
 
-.primary-button:active {
+.node-button:active {
   transform: translateY(1px);
+}
+
+.node-button--agent {
+  border-bottom-color: #5b7cfa;
+}
+
+.node-button--router {
+  border-bottom-color: #d99b24;
+}
+
+.node-button--tool {
+  border-bottom-color: #279d72;
+}
+
+.node-button--humanInput {
+  border-bottom-color: #a260d1;
+}
+
+.node-button--join {
+  border-bottom-color: #68758a;
 }
 
 .workspace {
   min-height: 0;
-  padding: 12px;
+  padding: 10px;
 }
 
 .canvas-shell {
@@ -99,27 +135,49 @@ body {
   height: 100%;
   overflow: hidden;
   border: 1px solid #dfe5ef;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 12px 40px rgba(31, 41, 55, 0.06);
 }
 
-.agent-node {
-  width: 220px;
+.graph-node {
+  --node-accent: #68758a;
+  width: 210px;
   display: grid;
   gap: 6px;
-  padding: 14px;
-  border: 1px solid #b8c3d6;
+  padding: 13px 14px 14px;
+  border: 1px solid #c9d1df;
+  border-top: 4px solid var(--node-accent);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 8px 22px rgba(31, 41, 55, 0.1);
 }
 
-.agent-node--selected {
-  outline: 3px solid rgba(23, 32, 51, 0.15);
+.graph-node--agent {
+  --node-accent: #5b7cfa;
 }
 
-.agent-node__badge {
+.graph-node--router {
+  --node-accent: #d99b24;
+}
+
+.graph-node--tool {
+  --node-accent: #279d72;
+}
+
+.graph-node--humanInput {
+  --node-accent: #a260d1;
+}
+
+.graph-node--join {
+  --node-accent: #68758a;
+}
+
+.graph-node--selected {
+  outline: 3px solid color-mix(in srgb, var(--node-accent) 22%, transparent);
+}
+
+.graph-node__badge {
   width: fit-content;
   padding: 3px 7px;
   border-radius: 999px;
@@ -127,32 +185,32 @@ body {
   color: #475467;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.agent-node__title {
+.graph-node__title {
   font-size: 15px;
 }
 
-.agent-node__description {
+.graph-node__description {
   color: #667085;
   font-size: 12px;
   line-height: 1.45;
 }
 
 .status-bar {
-  min-height: 32px;
-  padding: 8px 16px;
+  min-height: 30px;
+  padding: 7px 14px;
   border-top: 1px solid #dfe5ef;
   background: #fff;
   color: #667085;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 @media (max-width: 640px) {
   .toolbar {
-    padding: 10px 12px;
+    gap: 7px;
+    padding: 8px 10px 9px;
   }
 
   .toolbar__eyebrow,
@@ -161,19 +219,26 @@ body {
   }
 
   .toolbar h1 {
-    font-size: 16px;
+    font-size: 15px;
+  }
+
+  .node-button {
+    min-height: 36px;
+    padding: 0 11px;
+    font-size: 11px;
   }
 
   .workspace {
-    padding: 8px;
+    padding: 7px;
   }
 
   .canvas-shell {
-    border-radius: 14px;
+    border-radius: 13px;
   }
 
-  .primary-button {
-    min-height: 44px;
+  .graph-node {
+    width: 190px;
+    padding: 11px 12px 12px;
   }
 
   .status-bar {

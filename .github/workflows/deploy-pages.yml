@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Clean generated Pages files
+        run: rm -rf docs/assets docs/index.html
       - run: npm run build
       - name: Commit built site to docs
         run: |

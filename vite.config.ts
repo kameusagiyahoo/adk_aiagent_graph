@@ -6,6 +6,6 @@ export default defineConfig({
   base: '/adk_aiagent_graph/',
   build: {
     outDir: 'docs',
-    emptyOutDir: true,
+    emptyOutDir: false,
   },
 });

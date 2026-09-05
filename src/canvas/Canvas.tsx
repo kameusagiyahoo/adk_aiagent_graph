@@ -10,10 +10,18 @@ import '@xyflow/react/dist/style.css';
 
 import type { GraphNode } from '../core/graph/types';
 import { AgentNode } from '../nodes/AgentNode';
+import { HumanInputNode } from '../nodes/HumanInputNode';
+import { JoinNode } from '../nodes/JoinNode';
+import { RouterNode } from '../nodes/RouterNode';
+import { ToolNode } from '../nodes/ToolNode';
 import { graphNodeToCanvasNode } from './reactFlowAdapter';
 
 const nodeTypes: NodeTypes = {
   agent: AgentNode,
+  router: RouterNode,
+  tool: ToolNode,
+  humanInput: HumanInputNode,
+  join: JoinNode,
 };
 
 type CanvasProps = {
