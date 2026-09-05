@@ -10,6 +10,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { GraphEdge, GraphNode } from '../core/graph/types';
+import type { ValidationIssue } from '../core/validation/types';
 import { AgentNode } from '../nodes/AgentNode';
 import { HumanInputNode } from '../nodes/HumanInputNode';
 import { JoinNode } from '../nodes/JoinNode';
@@ -28,6 +29,7 @@ const nodeTypes: NodeTypes = {
 type CanvasProps = {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  validationIssues: ValidationIssue[];
   selectedNodeId: string | null;
   onNodesChange: (nodes: GraphNode[]) => void;
   onConnectNodes: (sourceNodeId: string, targetNodeId: string) => void;
@@ -37,13 +39,18 @@ type CanvasProps = {
 export function Canvas({
   nodes,
   edges,
+  validationIssues,
   selectedNodeId,
   onNodesChange,
   onConnectNodes,
   onSelectNode,
 }: CanvasProps) {
   const canvasNodes = nodes.map((node) =>
-    graphNodeToCanvasNode(node, node.id === selectedNodeId),
+    graphNodeToCanvasNode(
+      node,
+      node.id === selectedNodeId,
+      validationIssues.filter((issue) => issue.nodeId === node.id),
+    ),
   );
   const canvasEdges = edges.map(graphEdgeToCanvasEdge);
 

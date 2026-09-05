@@ -1,7 +1,9 @@
 import type { GraphNode, NodeKind } from '../core/graph/types';
+import type { ValidationIssue } from '../core/validation/types';
 
 type NodeInspectorProps = {
   node: GraphNode | null;
+  issues: ValidationIssue[];
   onChange: (node: GraphNode) => void;
   onDelete: (nodeId: string) => void;
   onClose: () => void;
@@ -15,7 +17,7 @@ const labels: Record<NodeKind, string> = {
   join: 'Join',
 };
 
-export function NodeInspector({ node, onChange, onDelete, onClose }: NodeInspectorProps) {
+export function NodeInspector({ node, issues, onChange, onDelete, onClose }: NodeInspectorProps) {
   if (!node) {
     return null;
   }
@@ -106,7 +108,7 @@ export function NodeInspector({ node, onChange, onDelete, onClose }: NodeInspect
           <label className="inspector-field">
             <span>Strategy</span>
             <input value={node.config.strategy} readOnly />
-            <small>STEP 1では all 固定です。</small>
+            <small>現段階では all 固定です。</small>
           </label>
         );
     }
@@ -128,6 +130,21 @@ export function NodeInspector({ node, onChange, onDelete, onClose }: NodeInspect
       </header>
 
       <div className="node-inspector__body">
+        {issues.length > 0 && (
+          <section className="inspector-validation" aria-label="Validation results">
+            <div className="inspector-section-title">Validation</div>
+            {issues.map((issue) => (
+              <div
+                key={issue.id}
+                className={`inspector-validation__item inspector-validation__item--${issue.severity}`}
+              >
+                <strong>{issue.severity === 'error' ? 'ERROR' : 'WARNING'}</strong>
+                <span>{issue.message}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
         <label className="inspector-field">
           <span>Name</span>
           <input
@@ -153,7 +170,7 @@ export function NodeInspector({ node, onChange, onDelete, onClose }: NodeInspect
         <button type="button" className="danger-button" onClick={deleteNode}>
           Nodeを削除
         </button>
-        <span>変更は即時反映</span>
+        <span>変更は即時検証</span>
       </footer>
     </aside>
   );

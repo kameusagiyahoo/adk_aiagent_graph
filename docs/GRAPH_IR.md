@@ -1,6 +1,6 @@
 # Graph IR
 
-現在の最小Graph IR:
+現在のGraph IRは、React FlowやADKに依存しないアプリ独自形式とする。
 
 ```text
 GraphProject
@@ -11,14 +11,11 @@ GraphProject
 - edges[]
 ```
 
-Node種別:
-- Agent
-- Router
-- Tool
-- HumanInput
-- Join
+## Node
 
-各Nodeは共通して以下を持つ。
+Nodeは`kind`を判別キーにしたdiscriminated union。
+
+共通フィールド:
 
 ```text
 - id
@@ -29,7 +26,28 @@ Node種別:
 - config
 ```
 
-EdgeはReact FlowのEdge型をそのまま保存せず、独自形式で保持する。
+Node種別と固有config:
+
+```text
+Agent
+- instruction
+
+Router
+- condition
+
+Tool
+- toolType
+
+HumanInput
+- prompt
+
+Join
+- strategy = all
+```
+
+`position`は現段階ではGraph IR側に保持するが、React Flow固有型は保存しない。
+
+## Edge
 
 ```text
 GraphEdge
@@ -40,5 +58,20 @@ GraphEdge
 - targetPortId = in
 ```
 
-`position`は現段階ではGraph IR側に保持する。
-React Flow固有データはIRへ保存しない。
+EdgeもReact FlowのEdge型をそのまま保存しない。
+
+## Validationとの関係
+
+Validatorは`GraphProject`だけを入力として動作する。
+Canvas UIやReact Flowを参照しない。
+
+```text
+Canvas
+  ↓
+Graph IR
+  ├─ Validator
+  ├─ Specification Generator
+  └─ Adapter（将来）
+```
+
+この分離により、同じGraph IRをADK、LangGraph、独自Runtimeなどへ変換できる構造を維持する。

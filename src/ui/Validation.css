@@ -1,0 +1,144 @@
+.workspace {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.validation-summary {
+  min-width: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid #e5c9a0;
+  border-radius: 11px;
+  background: #fffaf2;
+  color: #4c3b21;
+  font-size: 11px;
+}
+
+.validation-summary--ok {
+  border-color: #b9dfcf;
+  background: #f4fbf7;
+  color: #285d4a;
+}
+
+.validation-summary__error,
+.validation-summary__warning {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.validation-summary__error {
+  background: #fff0f0;
+  color: #a12f2f;
+}
+
+.validation-summary__warning {
+  background: #fff4d8;
+  color: #8b5d08;
+}
+
+.validation-summary__message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #667085;
+}
+
+.graph-node--error {
+  box-shadow: 0 0 0 2px rgba(193, 54, 54, 0.25), 0 8px 22px rgba(31, 41, 55, 0.1);
+}
+
+.graph-node--warning {
+  box-shadow: 0 0 0 2px rgba(203, 143, 28, 0.22), 0 8px 22px rgba(31, 41, 55, 0.1);
+}
+
+.graph-node__validation {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.graph-node__validation-error,
+.graph-node__validation-warning {
+  padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.graph-node__validation-error {
+  background: #fff0f0;
+  color: #a12f2f;
+  border: 1px solid #f1b7b7;
+}
+
+.graph-node__validation-warning {
+  background: #fff6df;
+  color: #8b5d08;
+  border: 1px solid #efd18d;
+}
+
+.inspector-validation {
+  display: grid;
+  gap: 7px;
+}
+
+.inspector-validation .inspector-section-title {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.inspector-validation__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.inspector-validation__item strong {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.inspector-validation__item--error {
+  border: 1px solid #f0baba;
+  background: #fff6f6;
+  color: #8f2929;
+}
+
+.inspector-validation__item--warning {
+  border: 1px solid #eed59e;
+  background: #fffaf0;
+  color: #75500b;
+}
+
+@media (max-width: 640px) {
+  .workspace {
+    gap: 6px;
+  }
+
+  .validation-summary {
+    min-height: 34px;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .validation-summary > strong {
+    display: none;
+  }
+}

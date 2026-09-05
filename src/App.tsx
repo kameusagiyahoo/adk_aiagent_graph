@@ -7,6 +7,7 @@ import {
   replaceGraphNodeInProject,
 } from './core/graph/project';
 import type { GraphNode, GraphProject, NodeKind } from './core/graph/types';
+import { validateGraphProject } from './core/validation/validate';
 import { downloadGraphProjectJson, parseGraphProjectJson } from './storage/json';
 import {
   loadProjectFromLocalStorage,
@@ -14,6 +15,7 @@ import {
 } from './storage/localStorage';
 import { NodeInspector } from './ui/NodeInspector';
 import { Toolbar } from './ui/Toolbar';
+import { ValidationSummary } from './ui/ValidationSummary';
 import './styles.css';
 
 export default function App() {
@@ -21,6 +23,10 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const validation = validateGraphProject(project);
+  const selectedNodeIssues = selectedNodeId
+    ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
+    : [];
 
   useEffect(() => {
     saveProjectToLocalStorage(project);
@@ -94,9 +100,11 @@ export default function App() {
         onImport={importProject}
       />
       <section className="workspace">
+        <ValidationSummary result={validation} />
         <Canvas
           nodes={project.nodes}
           edges={project.edges}
+          validationIssues={validation.issues}
           selectedNodeId={selectedNodeId}
           onNodesChange={updateNodes}
           onConnectNodes={connectNodes}
@@ -104,11 +112,12 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 1E — 自動保存 / JSON書き出し・読み込み
+        STEP 2A — Graph IR Validator / Error・Warning表示
       </footer>
 
       <NodeInspector
         node={selectedNode}
+        issues={selectedNodeIssues}
         onChange={updateNode}
         onDelete={deleteNode}
         onClose={() => setSelectedNodeId(null)}
