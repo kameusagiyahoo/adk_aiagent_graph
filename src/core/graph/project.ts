@@ -1,4 +1,4 @@
-import type { GraphNode, GraphProject, NodeKind } from './types';
+import type { GraphEdge, GraphNode, GraphProject, NodeKind } from './types';
 
 const createId = () => {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -74,3 +74,11 @@ export const createGraphNode = (
       };
   }
 };
+
+export const createGraphEdge = (sourceNodeId: string, targetNodeId: string): GraphEdge => ({
+  id: `edge-${createId()}`,
+  sourceNodeId,
+  sourcePortId: 'out',
+  targetNodeId,
+  targetPortId: 'in',
+});

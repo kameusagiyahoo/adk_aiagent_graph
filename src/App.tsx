@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Canvas } from './canvas/Canvas';
-import { createEmptyProject, createGraphNode } from './core/graph/project';
+import { createEmptyProject, createGraphEdge, createGraphNode } from './core/graph/project';
 import type { GraphProject, NodeKind } from './core/graph/types';
 import { Toolbar } from './ui/Toolbar';
 import './styles.css';
@@ -24,14 +24,39 @@ export default function App() {
     setProject((current) => ({ ...current, nodes }));
   };
 
+  const connectNodes: React.ComponentProps<typeof Canvas>['onConnectNodes'] = (
+    sourceNodeId,
+    targetNodeId,
+  ) => {
+    setProject((current) => {
+      const duplicate = current.edges.some(
+        (edge) => edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId,
+      );
+
+      if (duplicate) {
+        return current;
+      }
+
+      return {
+        ...current,
+        edges: [...current.edges, createGraphEdge(sourceNodeId, targetNodeId)],
+      };
+    });
+  };
+
   return (
     <main className="app-shell">
       <Toolbar onAddNode={addNode} nodeCount={project.nodes.length} />
       <section className="workspace">
-        <Canvas nodes={project.nodes} onNodesChange={updateNodes} />
+        <Canvas
+          nodes={project.nodes}
+          edges={project.edges}
+          onNodesChange={updateNodes}
+          onConnectNodes={connectNodes}
+        />
       </section>
       <footer className="status-bar">
-        STEP 1B — 5 Node種別 / 追加 / ドラッグ移動
+        STEP 1C — Node右側のOutputから別Node左側のInputへドラッグして接続
       </footer>
     </main>
   );

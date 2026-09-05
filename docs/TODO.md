@@ -4,9 +4,8 @@
 - [x] Agent追加
 - [x] Agent移動
 - [x] Router / Tool / HumanInput / Join
-- [x] 5 Node種別のGraph IR定義
-- [ ] Edge
-- [ ] Port
+- [x] Input / Output Port
+- [x] Edge接続
 - [ ] Node削除
 - [ ] Inspector
 - [ ] localStorage

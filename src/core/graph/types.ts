@@ -47,10 +47,18 @@ export type GraphNode =
   | HumanInputGraphNode
   | JoinGraphNode;
 
+export type GraphEdge = {
+  id: string;
+  sourceNodeId: string;
+  sourcePortId: 'out';
+  targetNodeId: string;
+  targetPortId: 'in';
+};
+
 export type GraphProject = {
   id: string;
   version: 1;
   name: string;
   nodes: GraphNode[];
-  edges: [];
+  edges: GraphEdge[];
 };

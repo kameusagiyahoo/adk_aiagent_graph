@@ -4,15 +4,16 @@ AIエージェントやアプリ構成を、ブラウザ上のノードCanvasで
 
 ## Current step
 
-STEP 1B: 5 Node Types
+STEP 1C: Port / Edge MVP
 
-- Canvasを表示
+- Canvas表示
 - Agent / Router / Tool / HumanInput / Join を追加
-- 5種類のNodeをドラッグ移動
+- Nodeをドラッグ移動
+- 各NodeにInput / Output Portを表示
+- OutputからInputへドラッグしてEdge接続
 - Graph IRとCanvas UIを分離
-- スマホ向けの横スクロールNode追加バー
 
-まだEdge、Port、保存、設定編集、Validator、ADK連携は実装していません。
+まだNode削除、設定編集、保存、Validator、ADK連携は実装していません。
 
 ## Development
 
@@ -27,4 +28,4 @@ npm run dev
 npm run build
 ```
 
-GitHub Pagesは `main /docs` を公開します。Viteの静的ビルド成果物も `docs/` に生成します。
+GitHub Pagesは `main /docs` を公開します。Viteの静的ビルド成果物は `docs/` に生成されます。

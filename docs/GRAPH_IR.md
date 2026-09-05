@@ -1,17 +1,24 @@
 # Graph IR
 
-STEP 1Bでは5種類のNodeをGraph IRとして定義する。
+現在の最小Graph IR:
 
 ```text
 GraphProject
 - id
 - version
 - name
-- nodes
-- edges
+- nodes[]
+- edges[]
 ```
 
-共通Node情報:
+Node種別:
+- Agent
+- Router
+- Tool
+- HumanInput
+- Join
+
+各Nodeは共通して以下を持つ。
 
 ```text
 - id
@@ -22,26 +29,16 @@ GraphProject
 - config
 ```
 
-Node kind:
+EdgeはReact FlowのEdge型をそのまま保存せず、独自形式で保持する。
 
 ```text
-agent
-router
-tool
-humanInput
-join
+GraphEdge
+- id
+- sourceNodeId
+- sourcePortId = out
+- targetNodeId
+- targetPortId = in
 ```
 
-現在の最小config:
-
-```text
-Agent       -> instruction
-Router      -> condition
-Tool        -> toolType
-HumanInput  -> prompt
-Join        -> strategy
-```
-
-`position`はGraph IR側に保持する。
+`position`は現段階ではGraph IR側に保持する。
 React Flow固有データはIRへ保存しない。
-PortとEdgeの正式仕様は次STEP以降で追加する。

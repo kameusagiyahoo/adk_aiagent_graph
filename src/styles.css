@@ -142,6 +142,7 @@ body {
 
 .graph-node {
   --node-accent: #68758a;
+  position: relative;
   width: 210px;
   display: grid;
   gap: 6px;
@@ -175,6 +176,23 @@ body {
 
 .graph-node--selected {
   outline: 3px solid color-mix(in srgb, var(--node-accent) 22%, transparent);
+}
+
+.graph-node__handle {
+  width: 16px !important;
+  height: 16px !important;
+  border: 3px solid #fff !important;
+  background: var(--node-accent) !important;
+  box-shadow: 0 1px 5px rgba(31, 41, 55, 0.28);
+  touch-action: none;
+}
+
+.graph-node__handle--input {
+  left: -9px !important;
+}
+
+.graph-node__handle--output {
+  right: -9px !important;
 }
 
 .graph-node__badge {
@@ -239,6 +257,19 @@ body {
   .graph-node {
     width: 190px;
     padding: 11px 12px 12px;
+  }
+
+  .graph-node__handle {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .graph-node__handle--input {
+    left: -11px !important;
+  }
+
+  .graph-node__handle--output {
+    right: -11px !important;
   }
 
   .status-bar {
