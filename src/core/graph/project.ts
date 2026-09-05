@@ -82,3 +82,22 @@ export const createGraphEdge = (sourceNodeId: string, targetNodeId: string): Gra
   targetNodeId,
   targetPortId: 'in',
 });
+
+export const replaceGraphNodeInProject = (
+  project: GraphProject,
+  updatedNode: GraphNode,
+): GraphProject => ({
+  ...project,
+  nodes: project.nodes.map((node) => (node.id === updatedNode.id ? updatedNode : node)),
+});
+
+export const removeGraphNodeFromProject = (
+  project: GraphProject,
+  nodeId: string,
+): GraphProject => ({
+  ...project,
+  nodes: project.nodes.filter((node) => node.id !== nodeId),
+  edges: project.edges.filter(
+    (edge) => edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId,
+  ),
+});

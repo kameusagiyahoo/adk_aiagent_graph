@@ -5,10 +5,11 @@ import type { BaseNodeData } from '../nodes/BaseNode';
 export type CanvasNode = Node<BaseNodeData>;
 export type CanvasEdge = Edge;
 
-export const graphNodeToCanvasNode = (node: GraphNode): CanvasNode => ({
+export const graphNodeToCanvasNode = (node: GraphNode, selected = false): CanvasNode => ({
   id: node.id,
   type: node.kind,
   position: node.position,
+  selected,
   data: {
     kind: node.kind,
     name: node.name,

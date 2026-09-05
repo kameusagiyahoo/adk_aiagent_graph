@@ -28,12 +28,23 @@ const nodeTypes: NodeTypes = {
 type CanvasProps = {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  selectedNodeId: string | null;
   onNodesChange: (nodes: GraphNode[]) => void;
   onConnectNodes: (sourceNodeId: string, targetNodeId: string) => void;
+  onSelectNode: (nodeId: string | null) => void;
 };
 
-export function Canvas({ nodes, edges, onNodesChange, onConnectNodes }: CanvasProps) {
-  const canvasNodes = nodes.map(graphNodeToCanvasNode);
+export function Canvas({
+  nodes,
+  edges,
+  selectedNodeId,
+  onNodesChange,
+  onConnectNodes,
+  onSelectNode,
+}: CanvasProps) {
+  const canvasNodes = nodes.map((node) =>
+    graphNodeToCanvasNode(node, node.id === selectedNodeId),
+  );
   const canvasEdges = edges.map(graphEdgeToCanvasEdge);
 
   const handleNodesChange = (changes: NodeChange[]) => {
@@ -64,6 +75,8 @@ export function Canvas({ nodes, edges, onNodesChange, onConnectNodes }: CanvasPr
         nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onConnect={handleConnect}
+        onNodeClick={(_, node) => onSelectNode(node.id)}
+        onPaneClick={() => onSelectNode(null)}
         fitView
         minZoom={0.25}
         maxZoom={2}

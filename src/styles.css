@@ -23,7 +23,8 @@ body,
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -101,7 +102,9 @@ body {
   touch-action: manipulation;
 }
 
-.node-button:active {
+.node-button:active,
+.icon-button:active,
+.danger-button:active {
   transform: translateY(1px);
 }
 
@@ -225,6 +228,202 @@ body {
   font-size: 11px;
 }
 
+.node-inspector {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  width: min(560px, calc(100vw - 20px));
+  max-height: min(72dvh, 680px);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border: 1px solid #d7deea;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 70px rgba(23, 32, 51, 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.node-inspector__grabber {
+  width: 42px;
+  height: 5px;
+  margin: 8px auto 0;
+  border-radius: 999px;
+  background: #d1d7e0;
+}
+
+.node-inspector__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.node-inspector__header h2 {
+  margin: 4px 0 0;
+  font-size: 17px;
+}
+
+.node-inspector__kind {
+  width: fit-content;
+  padding: 3px 8px;
+  border: 1px solid #d9dfeb;
+  border-radius: 999px;
+  background: #f7f9fc;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.node-inspector__kind--agent {
+  border-color: #b9c7ff;
+}
+
+.node-inspector__kind--router {
+  border-color: #ecd08f;
+}
+
+.node-inspector__kind--tool {
+  border-color: #9bd7c2;
+}
+
+.node-inspector__kind--humanInput {
+  border-color: #d6b2ee;
+}
+
+.node-inspector__kind--join {
+  border-color: #c3cad6;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #dbe1eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #344054;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.node-inspector__body {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.inspector-field {
+  display: grid;
+  gap: 6px;
+}
+
+.inspector-field > span,
+.inspector-section-title {
+  color: #475467;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.inspector-field input,
+.inspector-field textarea,
+.inspector-field select {
+  width: 100%;
+  border: 1px solid #ccd5e2;
+  border-radius: 11px;
+  background: #fff;
+  color: #172033;
+  outline: none;
+}
+
+.inspector-field input,
+.inspector-field select {
+  min-height: 42px;
+  padding: 0 11px;
+}
+
+.inspector-field textarea {
+  resize: vertical;
+  min-height: 72px;
+  padding: 10px 11px;
+  line-height: 1.45;
+}
+
+.inspector-field input:focus,
+.inspector-field textarea:focus,
+.inspector-field select:focus {
+  border-color: #8796b0;
+  box-shadow: 0 0 0 3px rgba(91, 124, 250, 0.1);
+}
+
+.inspector-field input[readonly] {
+  background: #f5f7fa;
+  color: #667085;
+}
+
+.inspector-field small {
+  color: #7a8699;
+  font-size: 10px;
+}
+
+.inspector-section-title {
+  padding-top: 2px;
+  border-top: 1px solid #edf0f5;
+  padding-top: 12px;
+}
+
+.node-inspector__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid #edf0f5;
+  background: #fbfcfe;
+}
+
+.node-inspector__footer span {
+  color: #7a8699;
+  font-size: 10px;
+}
+
+.danger-button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #efb7b7;
+  border-radius: 11px;
+  background: #fff7f7;
+  color: #a12f2f;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (min-width: 900px) {
+  .node-inspector {
+    left: auto;
+    right: 16px;
+    top: 112px;
+    bottom: 44px;
+    width: 360px;
+    max-height: none;
+    transform: none;
+    border-radius: 16px;
+  }
+
+  .node-inspector__grabber {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .toolbar {
     gap: 7px;
@@ -276,5 +475,25 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .node-inspector {
+    width: calc(100vw - 14px);
+    max-height: 64dvh;
+    bottom: calc(7px + env(safe-area-inset-bottom));
+    border-radius: 18px;
+  }
+
+  .node-inspector__header {
+    padding: 8px 12px 7px;
+  }
+
+  .node-inspector__body {
+    gap: 10px;
+    padding: 10px 12px 12px;
+  }
+
+  .node-inspector__footer {
+    padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
   }
 }
