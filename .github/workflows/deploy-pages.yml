@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build-pages-files
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,4 +36,5 @@ jobs:
             exit 0
           fi
           git commit -m "build: update GitHub Pages files [skip ci]"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
