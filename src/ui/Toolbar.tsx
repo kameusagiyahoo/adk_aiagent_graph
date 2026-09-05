@@ -1,8 +1,13 @@
+import type { ChangeEvent } from 'react';
 import type { NodeKind } from '../core/graph/types';
+import './Toolbar.css';
 
 type ToolbarProps = {
   onAddNode: (kind: NodeKind) => void;
   nodeCount: number;
+  edgeCount: number;
+  onExport: () => void;
+  onImport: (file: File) => void | Promise<void>;
 };
 
 const nodeButtons: Array<{ kind: NodeKind; label: string }> = [
@@ -13,7 +18,21 @@ const nodeButtons: Array<{ kind: NodeKind; label: string }> = [
   { kind: 'join', label: 'Join' },
 ];
 
-export function Toolbar({ onAddNode, nodeCount }: ToolbarProps) {
+export function Toolbar({
+  onAddNode,
+  nodeCount,
+  edgeCount,
+  onExport,
+  onImport,
+}: ToolbarProps) {
+  const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      void onImport(file);
+    }
+    event.target.value = '';
+  };
+
   return (
     <header className="toolbar">
       <div className="toolbar__top">
@@ -21,7 +40,27 @@ export function Toolbar({ onAddNode, nodeCount }: ToolbarProps) {
           <div className="toolbar__eyebrow">Agent Graph Designer</div>
           <h1>Canvas MVP</h1>
         </div>
-        <span className="node-count">Nodes: {nodeCount}</span>
+
+        <div className="toolbar__meta">
+          <span className="save-state">自動保存</span>
+          <span className="node-count">
+            Nodes: {nodeCount} / Edges: {edgeCount}
+          </span>
+          <div className="project-actions" aria-label="Graph JSON">
+            <button type="button" className="project-action" onClick={onExport}>
+              書出
+            </button>
+            <label className="project-action project-action--file">
+              読込
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImport}
+                aria-label="Graph JSONを読み込む"
+              />
+            </label>
+          </div>
+        </div>
       </div>
 
       <nav className="node-palette" aria-label="Nodeを追加">

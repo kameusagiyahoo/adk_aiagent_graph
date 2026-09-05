@@ -4,7 +4,7 @@ AIエージェントやアプリ構成を、ブラウザ上のノードCanvasで
 
 ## Current step
 
-STEP 1D: Canvas Editor MVP
+STEP 1E: Canvas Editor MVP complete
 
 実装済み:
 - Canvas表示
@@ -17,13 +17,15 @@ STEP 1D: Canvas Editor MVP
 - Node削除
 - Node削除時の関連Edge削除
 - スマホ向けBottom Sheet Inspector
+- localStorage自動保存
+- Graph JSON Export / Import
+- Import時の基本バリデーション
 - Graph IRとCanvas UIの分離
 
 まだ未実装:
-- localStorage
-- JSON Export / Import
-- Validator
-- ADK連携
+- Graph Validator
+- Specification / Prompt Generator
+- ADK Adapter
 - Backend
 
 ## Development

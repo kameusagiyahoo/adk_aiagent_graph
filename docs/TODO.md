@@ -7,5 +7,13 @@
 - [x] Edge
 - [x] Node削除
 - [x] Inspector
-- [ ] localStorage
-- [ ] JSON Export / Import
+- [x] localStorage
+- [x] JSON Export / Import
+
+## Next
+- [ ] Graph IR詳細化
+- [ ] Validator
+- [ ] Validation UI
+- [ ] Specification Generator
+- [ ] Prompt Generator
+- [ ] ADK Adapter

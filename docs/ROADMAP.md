@@ -13,15 +13,22 @@
 - Input / Output Port
 - Edge接続
 
-## STEP 1D — current
+## STEP 1D — done
 - Node選択
 - Node設定編集
 - Node削除
 - Node削除時に関連Edgeも削除
 - スマホ向けBottom Sheet Inspector
 
-## STEP 1E
-- localStorage
-- JSON Export / Import
+## STEP 1E — done
+- localStorage自動保存
+- Graph JSON Export
+- Graph JSON Import
+- Import時の基本バリデーション
 
-その後にGraph IR詳細、Validator、Generator、Adapterへ進む。
+## STEP 2A — next
+- Graph IRの詳細化
+- UI非依存Validator
+- Validation結果の表示
+
+その後にSpecification / Prompt Generator、ADK Adapterへ進む。
