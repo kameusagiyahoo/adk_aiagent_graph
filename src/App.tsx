@@ -7,6 +7,7 @@ import {
   replaceGraphNodeInProject,
 } from './core/graph/project';
 import type { GraphNode, GraphProject, NodeKind } from './core/graph/types';
+import { generateGraphSpecification } from './core/specification/generate';
 import { validateGraphProject } from './core/validation/validate';
 import { downloadGraphProjectJson, parseGraphProjectJson } from './storage/json';
 import {
@@ -14,6 +15,7 @@ import {
   saveProjectToLocalStorage,
 } from './storage/localStorage';
 import { NodeInspector } from './ui/NodeInspector';
+import { SpecificationPreview } from './ui/SpecificationPreview';
 import { Toolbar } from './ui/Toolbar';
 import { ValidationSummary } from './ui/ValidationSummary';
 import './styles.css';
@@ -21,9 +23,11 @@ import './styles.css';
 export default function App() {
   const [project, setProject] = useState<GraphProject>(loadProjectFromLocalStorage);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isSpecificationOpen, setSpecificationOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const validation = validateGraphProject(project);
+  const specification = generateGraphSpecification(project);
   const selectedNodeIssues = selectedNodeId
     ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
     : [];
@@ -83,11 +87,17 @@ export default function App() {
       const importedProject = parseGraphProjectJson(text);
       setProject(importedProject);
       setSelectedNodeId(null);
+      setSpecificationOpen(false);
       window.alert('Graph JSONを読み込みました。');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'JSONの読み込みに失敗しました。';
       window.alert(message);
     }
+  };
+
+  const openSpecification = () => {
+    setSelectedNodeId(null);
+    setSpecificationOpen(true);
   };
 
   return (
@@ -98,6 +108,7 @@ export default function App() {
         edgeCount={project.edges.length}
         onExport={() => downloadGraphProjectJson(project)}
         onImport={importProject}
+        onOpenSpecification={openSpecification}
       />
       <section className="workspace">
         <ValidationSummary result={validation} />
@@ -112,7 +123,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 2A — Graph IR Validator / Error・Warning表示
+        STEP 2B — Graph IRから実装非依存の仕様書を自動生成
       </footer>
 
       <NodeInspector
@@ -122,6 +133,16 @@ export default function App() {
         onDelete={deleteNode}
         onClose={() => setSelectedNodeId(null)}
       />
+
+      {isSpecificationOpen && (
+        <SpecificationPreview
+          projectName={project.name}
+          markdown={specification.markdown}
+          errorCount={validation.errors.length}
+          warningCount={validation.warnings.length}
+          onClose={() => setSpecificationOpen(false)}
+        />
+      )}
     </main>
   );
 }
