@@ -37,9 +37,18 @@
 - Canvas上のValidation badge
 - Node Inspectorで指摘内容を表示
 
-## STEP 2B — next
-- Graph Specification Generator
-- Graphを人間/LLMが読める仕様書へ変換
-- Node役割、接続、分岐、設定の整理
+## STEP 2B — done
+- Graph IRから実装非依存Specificationを生成
+- Node定義 / 接続 / 入口 / 出口をMarkdown化
+- Node種別ごとの処理仕様を文章化
+- Router分岐ラベル未定義など現在の制約を明記
+- スマホ向けSpecification Preview
+- Markdownコピー / `.md`保存
 
-その後にPrompt Generator、ADK Adapterへ進む。
+## STEP 2C — next
+- Prompt Generator
+- SpecificationをCodexなどのCoding LLM向け実装指示へ変換
+- Validator Errorがある場合の生成警告
+- 出力対象Runtimeをまだ固定しない共通Prompt
+
+その後にGoogle ADK Adapterへ進む。
