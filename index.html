@@ -7,7 +7,25 @@
     <title>Agent Graph Designer</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-status" style="padding:20px;font-family:system-ui,sans-serif;color:#172033">
+        Agent Graph Designer を起動しています…
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function (event) {
+        var el = document.getElementById('boot-status');
+        if (el) {
+          el.textContent = '起動エラー: ' + (event.message || 'JavaScriptの読み込みに失敗しました');
+        }
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        var el = document.getElementById('boot-status');
+        if (el) {
+          el.textContent = '起動エラー: ' + String(event.reason || 'Promise error');
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
