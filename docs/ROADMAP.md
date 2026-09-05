@@ -45,10 +45,19 @@
 - スマホ向けSpecification Preview
 - Markdownコピー / `.md`保存
 
-## STEP 2C — next
-- Prompt Generator
-- SpecificationをCodexなどのCoding LLM向け実装指示へ変換
-- Validator Errorがある場合の生成警告
-- 出力対象Runtimeをまだ固定しない共通Prompt
+## STEP 2C — done
+- Specification + ValidationからCoding LLM向けPromptを生成
+- Graphに存在しない仕様を勝手に追加しない制約をPromptへ明記
+- Validation Error時は未設定値を推測せずTODOとして残す指示を追加
+- 既存Repositoryでは既存技術スタックを優先する共通Prompt
+- Graph IRとRuntime / UIの分離を実装要件として維持
+- スマホ向けPrompt Preview
+- Promptコピー / `.md`保存
 
-その後にGoogle ADK Adapterへ進む。
+## STEP 3A — next
+- Google ADK Adapterの設計
+- Graph IR → ADK概念のMappingを公式仕様で確認
+- Adapterの入出力形式を定義
+- まずコードPreview、後でZIP Export
+
+その後にADK用コード生成とRuntime Bridgeへ進む。

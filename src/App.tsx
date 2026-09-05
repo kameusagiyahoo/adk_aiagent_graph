@@ -7,6 +7,7 @@ import {
   replaceGraphNodeInProject,
 } from './core/graph/project';
 import type { GraphNode, GraphProject, NodeKind } from './core/graph/types';
+import { generateCodingPrompt } from './core/prompt/generate';
 import { generateGraphSpecification } from './core/specification/generate';
 import { validateGraphProject } from './core/validation/validate';
 import { downloadGraphProjectJson, parseGraphProjectJson } from './storage/json';
@@ -15,6 +16,7 @@ import {
   saveProjectToLocalStorage,
 } from './storage/localStorage';
 import { NodeInspector } from './ui/NodeInspector';
+import { PromptPreview } from './ui/PromptPreview';
 import { SpecificationPreview } from './ui/SpecificationPreview';
 import { Toolbar } from './ui/Toolbar';
 import { ValidationSummary } from './ui/ValidationSummary';
@@ -24,10 +26,12 @@ export default function App() {
   const [project, setProject] = useState<GraphProject>(loadProjectFromLocalStorage);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
+  const [isPromptOpen, setPromptOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const validation = validateGraphProject(project);
   const specification = generateGraphSpecification(project);
+  const codingPrompt = generateCodingPrompt(project, specification, validation);
   const selectedNodeIssues = selectedNodeId
     ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
     : [];
@@ -88,6 +92,7 @@ export default function App() {
       setProject(importedProject);
       setSelectedNodeId(null);
       setSpecificationOpen(false);
+      setPromptOpen(false);
       window.alert('Graph JSONを読み込みました。');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'JSONの読み込みに失敗しました。';
@@ -97,7 +102,14 @@ export default function App() {
 
   const openSpecification = () => {
     setSelectedNodeId(null);
+    setPromptOpen(false);
     setSpecificationOpen(true);
+  };
+
+  const openPrompt = () => {
+    setSelectedNodeId(null);
+    setSpecificationOpen(false);
+    setPromptOpen(true);
   };
 
   return (
@@ -109,6 +121,7 @@ export default function App() {
         onExport={() => downloadGraphProjectJson(project)}
         onImport={importProject}
         onOpenSpecification={openSpecification}
+        onOpenPrompt={openPrompt}
       />
       <section className="workspace">
         <ValidationSummary result={validation} />
@@ -123,7 +136,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 2B — Graph IRから実装非依存の仕様書を自動生成
+        STEP 2C — SpecificationとValidationからCoding LLM向けPromptを自動生成
       </footer>
 
       <NodeInspector
@@ -141,6 +154,16 @@ export default function App() {
           errorCount={validation.errors.length}
           warningCount={validation.warnings.length}
           onClose={() => setSpecificationOpen(false)}
+        />
+      )}
+
+      {isPromptOpen && (
+        <PromptPreview
+          projectName={project.name}
+          markdown={codingPrompt.markdown}
+          errorCount={codingPrompt.validationErrorCount}
+          warningCount={codingPrompt.validationWarningCount}
+          onClose={() => setPromptOpen(false)}
         />
       )}
     </main>
