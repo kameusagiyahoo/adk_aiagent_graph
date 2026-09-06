@@ -33,3 +33,28 @@ export type RuntimeValidationRequest = {
   packageName: string;
   files: Pick<AdkGeneratedFile, 'path' | 'content'>[];
 };
+
+export type RuntimeTraceEvent = {
+  eventId: string;
+  author: string;
+  nodeName: string;
+  branch: string;
+  route: string;
+  text: string;
+  functionCalls: string[];
+  functionResponses: string[];
+  isFinal: boolean;
+};
+
+export type RuntimeExecutionRequest = RuntimeValidationRequest & {
+  inputText: string;
+};
+
+export type RuntimeExecutionResult = {
+  status: 'completed' | 'failed';
+  invocationId: string;
+  finalText: string;
+  trace: RuntimeTraceEvent[];
+  error?: string | null;
+  traceback?: string;
+};
