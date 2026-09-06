@@ -52,6 +52,7 @@
 
 .runtime-actions {
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .runtime-actions button:disabled {
@@ -85,6 +86,11 @@
 .runtime-result-badge--failed {
   background: #fff0f0;
   color: #a12f2f;
+}
+
+.runtime-result-badge--skip {
+  background: #eef2f7;
+  color: #667085;
 }
 
 .runtime-checks,
@@ -177,6 +183,21 @@
   overflow-wrap: anywhere;
 }
 
+.runtime-state-json {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #e3e8f0;
+  border-radius: 11px;
+  background: #101828;
+  color: #f2f4f7;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .runtime-preview {
     max-height: 92dvh;
@@ -184,6 +205,14 @@
 
   .runtime-preview__body {
     padding: 10px;
+  }
+
+  .runtime-actions {
+    justify-content: flex-start;
+  }
+
+  .runtime-actions button {
+    min-height: 40px;
   }
 
   .runtime-check {
