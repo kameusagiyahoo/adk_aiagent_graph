@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import subprocess
@@ -7,10 +8,22 @@ import sys
 import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
 
 from validator import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES, PACKAGE_RE, _safe_relative_path
 
 RESULT_PREFIX = "__AGD_EXEC_RESULT__="
+
+
+def _is_loopback_url(value: str) -> bool:
+    try:
+        parsed = urlparse(value)
+        host = parsed.hostname or ""
+        if host in {"localhost", "127.0.0.1", "::1"}:
+            return True
+        return ipaddress.ip_address(host).is_loopback
+    except (ValueError, TypeError):
+        return False
 
 
 def _runtime_script() -> str:
@@ -27,6 +40,7 @@ PREFIX = "__AGD_EXEC_RESULT__="
 root_dir = sys.argv[1]
 package_name = sys.argv[2]
 user_text = sys.argv[3]
+mode = sys.argv[4]
 sys.path.insert(0, root_dir)
 
 
@@ -39,23 +53,25 @@ def _is_loopback_host(host):
         return False
 
 
-# Resolve the OpenAI API endpoint before restricting outbound sockets.
 _original_getaddrinfo = socket.getaddrinfo
 _openai_ips = set()
-try:
-    for info in _original_getaddrinfo("api.openai.com", 443, type=socket.SOCK_STREAM):
-        address = info[4]
-        if address:
-            _openai_ips.add(str(address[0]))
-except Exception:
-    pass
+if mode == "openai":
+    try:
+        for info in _original_getaddrinfo("api.openai.com", 443, type=socket.SOCK_STREAM):
+            address = info[4]
+            if address:
+                _openai_ips.add(str(address[0]))
+    except Exception:
+        pass
 
 _original_socket = socket.socket
 class RestrictedSocket(_original_socket):
     def _check(self, address):
         host = address[0] if isinstance(address, tuple) and address else ""
         text = str(host)
-        if _is_loopback_host(text) or text in _openai_ips:
+        if _is_loopback_host(text):
+            return
+        if mode == "openai" and text in _openai_ips:
             return
         raise RuntimeError(f"Network access blocked by Agent Graph Runtime: {text}")
 
@@ -154,25 +170,36 @@ print(PREFIX + json.dumps(result, ensure_ascii=False))
 '''
 
 
+def _failed(message: str) -> dict[str, Any]:
+    return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": message}
+
+
 def execute_generated_project(
     package_name: str,
     files: list[dict[str, str]],
     user_text: str,
+    *,
+    mode: str,
+    vllm_base_url: str | None = None,
 ) -> dict[str, Any]:
+    if mode not in {"openai", "vllm"}:
+        return _failed("Runtime modeはopenaiまたはvllmを指定してください。")
+
     openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not openai_api_key:
-        return {
-            "status": "failed",
-            "invocationId": "",
-            "finalText": "",
-            "trace": [],
-            "error": "OPENAI_API_KEYがLocal Bridgeの環境変数に設定されていません。",
-        }
+    vllm_api_key = os.environ.get("AGD_VLLM_API_KEY", "").strip() or "local-vllm"
+    if mode == "openai" and not openai_api_key:
+        return _failed("OPENAI_API_KEYがLocal Bridgeの環境変数に設定されていません。")
+    if mode == "vllm":
+        vllm_base_url = (vllm_base_url or "").strip().rstrip("/")
+        if not vllm_base_url or not _is_loopback_url(vllm_base_url):
+            return _failed("vLLM Base URLはlocalhost / loopbackのOpenAI互換URLを指定してください。")
+        if not vllm_base_url.endswith("/v1"):
+            return _failed("vLLM Base URLは /v1 で終わるURLを指定してください。")
 
     if not PACKAGE_RE.fullmatch(package_name):
-        return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": "Python package名が不正です。"}
+        return _failed("Python package名が不正です。")
     if not files or len(files) > MAX_FILES:
-        return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": f"file数は1〜{MAX_FILES}件にしてください。"}
+        return _failed(f"file数は1〜{MAX_FILES}件にしてください。")
 
     normalized: list[tuple[PurePosixPath, str]] = []
     seen: set[str] = set()
@@ -195,7 +222,7 @@ def execute_generated_project(
         if "agent.py" not in seen or "__init__.py" not in seen:
             raise ValueError("agent.py / __init__.py が必要です")
     except ValueError as exc:
-        return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": str(exc)}
+        return _failed(str(exc))
 
     with tempfile.TemporaryDirectory(prefix="agent-graph-exec-") as temp_dir:
         root = Path(temp_dir)
@@ -216,13 +243,23 @@ def execute_generated_project(
             "PYTHONIOENCODING": "utf-8",
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONUTF8": "1",
-            "OPENAI_API_KEY": openai_api_key,
-            "NO_PROXY": "localhost,127.0.0.1,::1,api.openai.com",
         })
+        if mode == "openai":
+            safe_env.update({
+                "OPENAI_API_KEY": openai_api_key,
+                "NO_PROXY": "localhost,127.0.0.1,::1,api.openai.com",
+            })
+        else:
+            safe_env.update({
+                "OPENAI_API_KEY": vllm_api_key,
+                "OPENAI_API_BASE": vllm_base_url or "",
+                "OPENAI_BASE_URL": vllm_base_url or "",
+                "NO_PROXY": "localhost,127.0.0.1,::1",
+            })
 
         try:
             process = subprocess.run(
-                [sys.executable, "-I", "-c", _runtime_script(), temp_dir, package_name, user_text],
+                [sys.executable, "-I", "-c", _runtime_script(), temp_dir, package_name, user_text, mode],
                 cwd=temp_dir,
                 env=safe_env,
                 capture_output=True,
@@ -231,14 +268,13 @@ def execute_generated_project(
                 check=False,
             )
         except subprocess.TimeoutExpired:
-            return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": "OpenAI API Executionが120秒でタイムアウトしました。"}
+            return _failed(f"{mode} Executionが120秒でタイムアウトしました。")
 
         payload_line = next((line for line in reversed(process.stdout.splitlines()) if line.startswith(RESULT_PREFIX)), None)
         if payload_line is None:
             detail = (process.stderr or process.stdout or f"exit={process.returncode}").strip()
-            return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": detail[-2000:]}
-
+            return _failed(detail[-2000:])
         try:
             return json.loads(payload_line[len(RESULT_PREFIX):])
         except Exception as exc:
-            return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": f"実行結果JSON解析失敗: {exc}"}
+            return _failed(f"実行結果JSON解析失敗: {exc}")
