@@ -16,6 +16,7 @@ import type {
   RuntimeValidationResult,
   VllmCheckResult,
 } from '../runtime/bridge/types';
+import { RuntimeComparison } from '../runtime/comparison/RuntimeComparison';
 import { SimulationPanel } from '../runtime/simulation/SimulationPanel';
 import type { SimulationResult } from '../runtime/simulation/types';
 import './SpecificationPreview.css';
@@ -149,6 +150,15 @@ export function RuntimeValidationPreview({
               Mockはブラウザ内だけで動作。OpenAI/vLLMは同じGraphをLocal Bridge経由で実LLM実行します。
             </div>
           </section>
+
+          <RuntimeComparison
+            project={project}
+            generation={generation}
+            settings={settings}
+            openAiModel={openAiModel}
+            onExecutionResult={onExecutionResult}
+            onSimulationResult={onSimulationResult}
+          />
 
           {settings.mode === 'mock' ? (
             <SimulationPanel project={project} onResult={(next) => { onExecutionResult(null); onSimulationResult(next); }} />
