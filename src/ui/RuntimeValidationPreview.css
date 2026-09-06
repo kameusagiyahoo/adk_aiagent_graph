@@ -87,7 +87,8 @@
   color: #a12f2f;
 }
 
-.runtime-checks {
+.runtime-checks,
+.runtime-trace {
   display: grid;
   gap: 7px;
 }
@@ -130,6 +131,50 @@
 
 .runtime-check--skip > strong {
   color: #7a8699;
+}
+
+.runtime-trace__event {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  border: 1px solid #e3e8f0;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.runtime-trace__event strong {
+  color: #344054;
+  font-size: 11px;
+}
+
+.runtime-trace__event small {
+  font-size: 9px;
+}
+
+.runtime-trace__event > div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #475467;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.runtime-trace__event--final {
+  border-color: #a9d8c4;
+  background: #f4fbf7;
+}
+
+.runtime-final {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border-radius: 11px;
+  background: #f4f7fb;
+  color: #344054;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {
