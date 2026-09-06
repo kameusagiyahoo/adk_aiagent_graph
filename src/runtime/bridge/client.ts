@@ -1,6 +1,8 @@
 import type {
   RuntimeBridgeHealth,
   RuntimeBridgeSettings,
+  RuntimeExecutionRequest,
+  RuntimeExecutionResult,
   RuntimeValidationRequest,
   RuntimeValidationResult,
 } from './types';
@@ -82,4 +84,15 @@ export const validateWithRuntimeBridge = (
     '/v1/validate',
     { method: 'POST', body: JSON.stringify(request) },
     25000,
+  );
+
+export const executeWithRuntimeBridge = (
+  settings: RuntimeBridgeSettings,
+  request: RuntimeExecutionRequest,
+) =>
+  requestJson<RuntimeExecutionResult>(
+    settings,
+    '/v1/execute',
+    { method: 'POST', body: JSON.stringify(request) },
+    55000,
   );
