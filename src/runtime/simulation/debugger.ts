@@ -1,9 +1,11 @@
 import type { GraphProject } from '../../core/graph/types';
 import type {
+  SimulationAdvanceOptions,
   SimulationDebugConfig,
   SimulationDebugSession,
   SimulationResult,
   SimulationRouteChoices,
+  SimulationState,
   SimulationTraceEvent,
 } from './types';
 
@@ -47,14 +49,45 @@ export const createSimulationDebugSession = (
     warnings,
     state: { input: config.initialInput, lastOutput: config.initialInput, lastNode: null, step: 0 },
     completed: queue.length === 0,
+    pausedAtBreakpoint: null,
   };
 };
+
+export const restartSimulationDebugSessionAtNode = (
+  project: GraphProject,
+  nodeId: string,
+  state: SimulationState,
+): SimulationDebugSession => {
+  const node = project.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node) {
+    return {
+      queue: [], visited: [], trace: [], edgeIds: [], warnings: ['再開対象Nodeが見つかりません。'],
+      state, completed: true, pausedAtBreakpoint: null,
+    };
+  }
+  return {
+    queue: [nodeId],
+    visited: [],
+    trace: [],
+    edgeIds: [],
+    warnings: [`${node.name} からStateを引き継いで再開しました。`],
+    state,
+    completed: false,
+    pausedAtBreakpoint: null,
+  };
+};
+
+export const replaceSimulationDebugState = (
+  session: SimulationDebugSession,
+  state: SimulationState,
+): SimulationDebugSession => ({ ...session, state });
 
 export const advanceSimulationDebugSession = (
   project: GraphProject,
   session: SimulationDebugSession,
   routeChoices: SimulationRouteChoices,
   config: SimulationDebugConfig,
+  options: SimulationAdvanceOptions = {},
 ): SimulationDebugSession => {
   if (session.completed) return session;
   const queue = [...session.queue];
@@ -62,16 +95,35 @@ export const advanceSimulationDebugSession = (
   const trace = [...session.trace];
   const edgeIds = [...session.edgeIds];
   const warnings = [...session.warnings];
-  const nodeId = queue.shift();
-  if (!nodeId) return { ...session, completed: true };
-  if (visited.includes(nodeId)) return { ...session, queue, completed: queue.length === 0 };
+  const nodeId = queue[0];
+  if (!nodeId) return { ...session, completed: true, pausedAtBreakpoint: null };
+
+  if (
+    !options.bypassBreakpoint
+    && options.breakpoints?.includes(nodeId)
+    && session.pausedAtBreakpoint !== nodeId
+  ) {
+    return { ...session, pausedAtBreakpoint: nodeId };
+  }
+
+  queue.shift();
+  if (visited.includes(nodeId)) {
+    return { ...session, queue, completed: queue.length === 0, pausedAtBreakpoint: null };
+  }
 
   const node = project.nodes.find((candidate) => candidate.id === nodeId);
-  if (!node) return { ...session, queue, completed: queue.length === 0 };
-  const input = session.state.lastOutput;
+  if (!node) return { ...session, queue, completed: queue.length === 0, pausedAtBreakpoint: null };
+  const input = String(session.state.lastOutput ?? '');
   const output = config.mockOutputs[nodeId]?.trim() || defaultOutput(node.name, node.kind, input);
   const selected = outgoingFor(project, nodeId, routeChoices);
   const step = trace.length + 1;
+  const stateSnapshot: SimulationState = {
+    ...session.state,
+    input: String(session.state.input ?? config.initialInput),
+    lastOutput: output,
+    lastNode: node.name,
+    step,
+  };
   const event: SimulationTraceEvent = {
     step,
     nodeId,
@@ -82,7 +134,7 @@ export const advanceSimulationDebugSession = (
     edgeId: selected.edges[0]?.id,
     input,
     output,
-    stateSnapshot: { input: config.initialInput, lastOutput: output, lastNode: node.name, step },
+    stateSnapshot,
   };
   trace.push(event);
   visited.push(nodeId);
@@ -109,8 +161,9 @@ export const advanceSimulationDebugSession = (
     trace,
     edgeIds,
     warnings: [...new Set(warnings)],
-    state: event.stateSnapshot,
+    state: stateSnapshot,
     completed,
+    pausedAtBreakpoint: null,
   };
 };
 

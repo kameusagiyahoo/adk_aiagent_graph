@@ -198,6 +198,92 @@
   overflow-wrap: anywhere;
 }
 
+.runtime-state-editor {
+  min-height: 150px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+}
+
+.simulation-config-actions,
+.simulation-resume-row,
+.simulation-compare-selects,
+.simulation-main-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.simulation-breakpoints {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #e3e8f0;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.simulation-breakpoint-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  color: #344054;
+  font-size: 11px;
+}
+
+.simulation-breakpoint-hit {
+  padding: 10px 12px;
+  border: 1px solid #f0c36a;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: #7a5200;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.simulation-resume-row select,
+.simulation-compare-selects select {
+  min-height: 38px;
+  flex: 1 1 180px;
+}
+
+.simulation-compare-selects label {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 6px;
+}
+
+.simulation-compare-selects label > span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #344054;
+}
+
+.simulation-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.simulation-run-card {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid #e3e8f0;
+  border-radius: 11px;
+  background: #fbfcfe;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.simulation-run-card strong {
+  color: #344054;
+}
+
 @media (max-width: 640px) {
   .runtime-preview {
     max-height: 92dvh;
@@ -221,5 +307,15 @@
 
   .runtime-check > span {
     grid-column: 2;
+  }
+
+  .simulation-config-actions > button,
+  .simulation-main-actions > button,
+  .simulation-resume-row > button {
+    flex: 1 1 42%;
+  }
+
+  .simulation-compare-grid {
+    grid-template-columns: 1fr;
   }
 }

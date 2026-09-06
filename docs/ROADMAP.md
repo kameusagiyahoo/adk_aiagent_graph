@@ -20,7 +20,12 @@
 - Local Bridge validation
 - ADK Event Trace
 - Canvas trace visualization
-- LLM不要のMock Simulation
+- LLM不要のMock Debugger
+- Step実行 / Pause
+- Breakpoint
+- 任意Nodeから再開
+- State編集
+- 実行履歴比較
 
 ### Next
 - Runtime mode switch: Mock / OpenAI API / vLLM Local

@@ -5,6 +5,7 @@ export type SimulationState = {
   lastOutput: string;
   lastNode: string | null;
   step: number;
+  [key: string]: unknown;
 };
 
 export type SimulationTraceEvent = {
@@ -43,4 +44,19 @@ export type SimulationDebugSession = {
   warnings: string[];
   state: SimulationState;
   completed: boolean;
+  pausedAtBreakpoint: string | null;
+};
+
+export type SimulationAdvanceOptions = {
+  breakpoints?: string[];
+  bypassBreakpoint?: boolean;
+};
+
+export type SimulationRunSnapshot = {
+  id: string;
+  label: string;
+  createdAt: string;
+  trace: SimulationTraceEvent[];
+  state: SimulationState;
+  warnings: string[];
 };
