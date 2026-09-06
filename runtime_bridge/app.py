@@ -10,9 +10,10 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from executor import execute_generated_project
 from validator import validate_generated_project
 
-BRIDGE_VERSION = "0.1.0"
+BRIDGE_VERSION = "0.2.0"
 BRIDGE_TOKEN = os.environ.get("AGD_BRIDGE_TOKEN") or secrets.token_urlsafe(24)
 DEFAULT_ORIGINS = [
     "https://kameusagiyahoo.github.io",
@@ -53,6 +54,10 @@ class ValidateRequest(BaseModel):
     files: list[GeneratedFile] = Field(min_length=1, max_length=40)
 
 
+class ExecuteRequest(ValidateRequest):
+    inputText: str = Field(min_length=1, max_length=12000)
+
+
 def require_token(
     token: Annotated[str | None, Header(alias="X-Agent-Graph-Token")] = None,
 ) -> None:
@@ -85,6 +90,15 @@ def validate(request: ValidateRequest):
     )
 
 
+@app.post("/v1/execute", dependencies=[Depends(require_token)])
+def execute(request: ExecuteRequest):
+    return execute_generated_project(
+        request.packageName,
+        [item.model_dump() for item in request.files],
+        request.inputText,
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
 
@@ -94,4 +108,5 @@ if __name__ == "__main__":
     print(f"Token     : {BRIDGE_TOKEN}")
     print("TokenをWebアプリの Runtime 画面へ入力してください。")
     print("Bridgeは127.0.0.1にのみbindします。")
+    print("Local Executionはlocalhost以外への通信を遮断します。")
     uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
