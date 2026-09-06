@@ -1,8 +1,12 @@
 import type { AdkGeneratedFile } from '../../adapters/adk/codegenTypes';
 
+export type RuntimeMode = 'mock' | 'openai' | 'vllm';
+
 export type RuntimeBridgeSettings = {
   baseUrl: string;
   token: string;
+  mode: RuntimeMode;
+  vllmBaseUrl: string;
 };
 
 export type RuntimeBridgeHealth = {
@@ -11,6 +15,7 @@ export type RuntimeBridgeHealth = {
   pythonVersion: string;
   adkVersion: string;
   openaiConfigured: boolean;
+  vllmApiKeyConfigured: boolean;
 };
 
 export type RuntimeCheckStatus = 'pass' | 'fail' | 'skip';
@@ -49,6 +54,8 @@ export type RuntimeTraceEvent = {
 
 export type RuntimeExecutionRequest = RuntimeValidationRequest & {
   inputText: string;
+  mode: Exclude<RuntimeMode, 'mock'>;
+  vllmBaseUrl?: string;
 };
 
 export type RuntimeExecutionResult = {
@@ -58,4 +65,11 @@ export type RuntimeExecutionResult = {
   trace: RuntimeTraceEvent[];
   error?: string | null;
   traceback?: string;
+};
+
+export type VllmCheckResult = {
+  ok: boolean;
+  baseUrl: string;
+  models: string[];
+  error?: string | null;
 };
