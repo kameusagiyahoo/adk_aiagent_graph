@@ -122,7 +122,7 @@ export default function App() {
         <ValidationSummary result={validation} />
         <Canvas nodes={project.nodes} edges={project.edges} validationIssues={validation.issues} selectedNodeId={selectedNodeId} selectedEdgeId={selectedEdgeId} runtimeNodeOrder={runtimeVisual.nodeOrder} runtimeEdgeIds={runtimeVisual.edgeIds} onNodesChange={updateNodes} onConnectNodes={connectNodes} onSelectNode={setSelectedNodeId} onSelectEdge={setSelectedEdgeId} />
       </section>
-      <footer className="status-bar">STEP 4C — Ollama Local LLM / ADK Event TraceをCanvasへ反映</footer>
+      <footer className="status-bar">STEP 4C — OpenAI API / ADK Event TraceをCanvasへ反映</footer>
 
       <NodeInspector node={selectedNode} issues={selectedNodeIssues} onChange={updateNode} onDelete={deleteNode} onClose={() => setSelectedNodeId(null)} />
       <EdgeInspector edge={selectedEdge} sourceNode={selectedEdgeSource} targetNode={selectedEdgeTarget} issues={selectedEdgeIssues} onChange={updateEdge} onDelete={deleteEdge} onClose={() => setSelectedEdgeId(null)} />

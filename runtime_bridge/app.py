@@ -10,10 +10,10 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from executor import execute_generated_project, probe_ollama
+from executor import execute_generated_project
 from validator import validate_generated_project
 
-BRIDGE_VERSION = "0.3.0"
+BRIDGE_VERSION = "0.4.0"
 BRIDGE_TOKEN = os.environ.get("AGD_BRIDGE_TOKEN") or secrets.token_urlsafe(24)
 DEFAULT_ORIGINS = [
     "https://kameusagiyahoo.github.io",
@@ -56,11 +56,6 @@ class ValidateRequest(BaseModel):
 
 class ExecuteRequest(ValidateRequest):
     inputText: str = Field(min_length=1, max_length=12000)
-    ollamaBaseUrl: str = Field(min_length=1, max_length=240)
-
-
-class OllamaHealthRequest(BaseModel):
-    baseUrl: str = Field(min_length=1, max_length=240)
 
 
 def require_token(
@@ -84,12 +79,8 @@ def health():
         "version": BRIDGE_VERSION,
         "pythonVersion": sys.version.split()[0],
         "adkVersion": adk_version(),
+        "openaiConfigured": bool(os.environ.get("OPENAI_API_KEY", "").strip()),
     }
-
-
-@app.post("/v1/ollama/health", dependencies=[Depends(require_token)])
-def ollama_health(request: OllamaHealthRequest):
-    return probe_ollama(request.baseUrl)
 
 
 @app.post("/v1/validate", dependencies=[Depends(require_token)])
@@ -106,7 +97,6 @@ def execute(request: ExecuteRequest):
         request.packageName,
         [item.model_dump() for item in request.files],
         request.inputText,
-        request.ollamaBaseUrl,
     )
 
 
@@ -117,8 +107,8 @@ if __name__ == "__main__":
     print("---------------------------------")
     print("Listening : http://127.0.0.1:8765")
     print(f"Token     : {BRIDGE_TOKEN}")
+    print(f"OpenAI key: {'configured' if os.environ.get('OPENAI_API_KEY', '').strip() else 'NOT SET'}")
     print("TokenをWebアプリの Runtime 画面へ入力してください。")
     print("Bridgeは127.0.0.1にのみbindします。")
-    print("Local Executionはlocalhost以外への通信を遮断します。")
-    print("Ollama default: http://127.0.0.1:11434")
+    print("生成AgentはOpenAI APIとloopback以外への通信を制限します。")
     uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")

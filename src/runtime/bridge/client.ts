@@ -1,5 +1,4 @@
 import type {
-  OllamaHealth,
   RuntimeBridgeHealth,
   RuntimeBridgeSettings,
   RuntimeExecutionRequest,
@@ -76,14 +75,6 @@ const requestJson = async <T>(
 export const checkRuntimeBridge = (settings: RuntimeBridgeSettings) =>
   requestJson<RuntimeBridgeHealth>(settings, '/v1/health', { method: 'GET' }, 5000);
 
-export const checkOllamaWithRuntimeBridge = (settings: RuntimeBridgeSettings) =>
-  requestJson<OllamaHealth>(
-    settings,
-    '/v1/ollama/health',
-    { method: 'POST', body: JSON.stringify({ baseUrl: settings.ollamaBaseUrl }) },
-    5000,
-  );
-
 export const validateWithRuntimeBridge = (
   settings: RuntimeBridgeSettings,
   request: RuntimeValidationRequest,
@@ -103,5 +94,5 @@ export const executeWithRuntimeBridge = (
     settings,
     '/v1/execute',
     { method: 'POST', body: JSON.stringify(request) },
-    60000,
+    120000,
   );
