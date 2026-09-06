@@ -186,7 +186,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 3C — CanvasからGoogle ADK 2.x Pythonコードを生成
+        STEP 3D — ADK Project静的チェック / README / ZIP Export
       </footer>
 
       <NodeInspector

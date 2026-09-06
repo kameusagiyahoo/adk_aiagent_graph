@@ -1,7 +1,8 @@
-import type { GraphNode, GraphProject, NodeKind, ToolConfig } from '../../core/graph/types';
+import type { GraphProject, NodeKind, ToolConfig } from '../../core/graph/types';
 import type { ValidationResult } from '../../core/validation/types';
 import type { AdkAdapterAnalysis, AdkAdapterSettings } from './types';
 import type { AdkCodeGeneration, AdkGeneratedFile } from './codegenTypes';
+import { runAdkStaticCheck } from './staticCheck';
 
 const kindPrefix: Record<NodeKind, string> = {
   agent: 'agent',
@@ -14,35 +15,45 @@ const kindPrefix: Record<NodeKind, string> = {
 const pyString = (value: string) => JSON.stringify(value) ?? '""';
 const oneLine = (value: string) => value.replace(/\s+/g, ' ').trim();
 
+const toPythonPackageName = (name: string) => {
+  const normalized = name
+    .normalize('NFKD')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+  const fallback = normalized || 'generated_agent';
+  return /^[0-9]/.test(fallback) ? `agent_${fallback}` : fallback;
+};
+
 const toolConfigLines = (config: ToolConfig): string[] => {
   switch (config.toolType) {
     case 'custom':
       return [
-        `type=custom`,
+        'type=custom',
         `functionName=${config.functionName || '(unset)'}`,
         `description=${oneLine(config.description) || '(unset)'}`,
       ];
     case 'http':
-      return [`type=http`, `method=${config.method}`, `url=${config.url || '(unset)'}`];
+      return ['type=http', `method=${config.method}`, `url=${config.url || '(unset)'}`];
     case 'mcp':
       return config.transport === 'stdio'
         ? [
-            `type=mcp`,
-            `transport=stdio`,
+            'type=mcp',
+            'transport=stdio',
             `command=${config.command || '(unset)'}`,
             `args=${config.args || '(none)'}`,
           ]
-        : [`type=mcp`, `transport=sse`, `url=${config.url || '(unset)'}`];
+        : ['type=mcp', 'transport=sse', `url=${config.url || '(unset)'}`];
     case 'search':
-      return [`type=search`, `provider=${config.provider || '(unset)'}`];
+      return ['type=search', `provider=${config.provider || '(unset)'}`];
     case 'database':
       return [
-        `type=database`,
+        'type=database',
         `connectionRef=${config.connectionRef || '(unset)'}`,
         `operation=${config.operation || '(unset)'}`,
       ];
     case 'file':
-      return [`type=file`, `operation=${config.operation}`, `path=${config.path || '(unset)'}`];
+      return ['type=file', `operation=${config.operation}`, `path=${config.path || '(unset)'}`];
   }
 };
 
@@ -101,7 +112,7 @@ const generateAgentPy = (
         lines.push(
           `${symbol} = Agent(`,
           `    name=${pyString(symbol)},`,
-          `    model=ADK_DEFAULT_MODEL,`,
+          '    model=ADK_DEFAULT_MODEL,',
           `    description=${pyString(`${node.name}: ${node.description}`)},`,
           `    instruction=${pyString(node.config.instruction)},`,
           ')',
@@ -120,7 +131,7 @@ const generateAgentPy = (
           `    """Canvas Router: ${oneLine(node.name)}"""`,
           `    # Canvas condition: ${oneLine(node.config.condition) || '(unset)'}`,
           `    # Allowed route keys: ${routeHint}`,
-          `    # TODO: Convert the Canvas condition into executable Python logic.`,
+          '    # TODO: Convert the Canvas condition into executable Python logic.',
           `    # Example shape: return Event(output=node_input, route=${pyString(routeKeys[0] ?? 'ROUTE_KEY')})`,
           `    raise NotImplementedError(${pyString(`TODO: implement Router logic for ${node.name}`)})`,
           '',
@@ -144,9 +155,7 @@ const generateAgentPy = (
           );
           todos.push(`${node.name}: choose how the MCP tool is invoked inside the workflow.`);
         } else {
-          lines.push(
-            '    # TODO: Implement this Tool wrapper. Do not hard-code credentials or secrets.',
-          );
+          lines.push('    # TODO: Implement this Tool wrapper. Do not hard-code credentials or secrets.');
           todos.push(`${node.name}: implement ${node.config.toolType} Tool runtime logic.`);
         }
         lines.push(
@@ -159,7 +168,7 @@ const generateAgentPy = (
         lines.push(
           '@node(rerun_on_resume=False)',
           `async def ${symbol}(node_input):`,
-          `    yield RequestInput(`,
+          '    yield RequestInput(',
           `        message=${pyString(node.config.prompt)},`,
           '        response_schema=str,',
           '    )',
@@ -187,9 +196,7 @@ const generateAgentPy = (
   if (entryNodes.length === 1) {
     lines.push(`    ("START", ${symbols.get(entryNodes[0].id)}),`);
   } else if (entryNodes.length > 1) {
-    lines.push(
-      `    ("START", (${entryNodes.map((node) => symbols.get(node.id)).join(', ')})),`,
-    );
+    lines.push(`    ("START", (${entryNodes.map((node) => symbols.get(node.id)).join(', ')})),`);
   } else {
     lines.push('    # TODO: No entry node was found. Check cycles and incoming edges.');
     todos.push('Workflow has no entry node connected from START.');
@@ -205,9 +212,7 @@ const generateAgentPy = (
       routerEdges.set(edge.sourceNodeId, list);
       continue;
     }
-    lines.push(
-      `    (${symbols.get(edge.sourceNodeId)}, ${symbols.get(edge.targetNodeId)}),`,
-    );
+    lines.push(`    (${symbols.get(edge.sourceNodeId)}, ${symbols.get(edge.targetNodeId)}),`);
   }
 
   for (const [routerId, edges] of routerEdges) {
@@ -248,6 +253,7 @@ const generateAgentPy = (
 
 const generateMappingReport = (
   project: GraphProject,
+  packageName: string,
   settings: AdkAdapterSettings,
   symbols: Map<string, string>,
   validation: ValidationResult,
@@ -258,6 +264,7 @@ const generateMappingReport = (
     '# ADK Code Generation Mapping',
     '',
     `- Project: ${project.name}`,
+    `- Python package / agent folder: \`${packageName}\``,
     '- Target: Google ADK 2.x Graph Workflow / Python',
     `- Default model: ${settings.defaultModel || '(unset)'}`,
     `- Validation errors: ${validation.errors.length}`,
@@ -307,39 +314,105 @@ const generateMappingReport = (
   return lines.join('\n');
 };
 
+const generateReadme = (
+  project: GraphProject,
+  packageName: string,
+  settings: AdkAdapterSettings,
+  todoCount: number,
+) => [
+  `# ${project.name}`,
+  '',
+  'Agent Graph Designerから生成したGoogle ADK 2.x向けPythonプロジェクトです。',
+  '',
+  '## 構成',
+  '',
+  '```text',
+  `${packageName}/`,
+  '├─ __init__.py',
+  '├─ agent.py',
+  '├─ requirements.txt',
+  '├─ README.md',
+  '└─ mapping.md',
+  '```',
+  '',
+  '## セットアップ',
+  '',
+  '```bash',
+  'python -m venv .venv',
+  'source .venv/bin/activate  # Windowsでは .venv\\Scripts\\activate',
+  'pip install -r requirements.txt',
+  '```',
+  '',
+  `生成時のADK default model: \`${settings.defaultModel || '(未設定)'}\``,
+  '',
+  'Gemini等の認証情報はこのZIPには含まれません。実行環境側で環境変数またはGoogle Cloud認証を設定してください。',
+  '',
+  '## ADK Webで確認',
+  '',
+  `ZIPを展開すると \`${packageName}\` というエージェントフォルダができます。`,
+  'そのフォルダを含む親ディレクトリで次を実行してください。',
+  '',
+  '```bash',
+  'adk web .',
+  '```',
+  '',
+  'ADKは`__init__.py`から`agent`モジュールを読み込み、`agent.py`の`root_agent`を利用します。',
+  '',
+  '## 生成状態',
+  '',
+  `- Generator TODO: ${todoCount}`,
+  '- 詳細は `mapping.md` を確認してください。',
+  '- TODOが残る場合、ZIPは持ち出せてもそのまま実行できるとは限りません。',
+  '',
+].join('\n');
+
 export const generateAdkProject = (
   project: GraphProject,
   settings: AdkAdapterSettings,
   validation: ValidationResult,
   analysis: AdkAdapterAnalysis,
 ): AdkCodeGeneration => {
+  const packageName = toPythonPackageName(project.name);
   const symbols = makeSymbolMap(project);
   const agentPy = generateAgentPy(project, settings, symbols);
-  const warnings = [...analysis.warnings];
   const requirements = 'google-adk>=2.0.0,<3.0.0\n';
+  const initPy = 'from . import agent\n';
   const mapping = generateMappingReport(
     project,
+    packageName,
     settings,
     symbols,
     validation,
     analysis,
     agentPy.todos,
   );
+  const readme = generateReadme(project, packageName, settings, agentPy.todos.length);
 
   const files: AdkGeneratedFile[] = [
     { path: 'agent.py', language: 'python', content: agentPy.content },
+    { path: '__init__.py', language: 'python', content: initPy },
     { path: 'requirements.txt', language: 'text', content: requirements },
+    { path: 'README.md', language: 'markdown', content: readme },
     { path: 'mapping.md', language: 'markdown', content: mapping },
   ];
 
+  const staticCheck = runAdkStaticCheck({
+    files,
+    validation,
+    analysis,
+    todoCount: agentPy.todos.length,
+    nodeCount: project.nodes.length,
+  });
+
   return {
+    packageName,
     files,
     todoCount: agentPy.todos.length,
     isRunnable:
-      project.nodes.length > 0 &&
-      validation.errors.length === 0 &&
+      staticCheck.errors.length === 0 &&
       analysis.blockedCount === 0 &&
       agentPy.todos.length === 0,
-    warnings,
+    warnings: [...analysis.warnings],
+    staticCheck,
   };
 };

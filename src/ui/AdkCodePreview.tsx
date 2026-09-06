@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { AdkCodeGeneration } from '../adapters/adk/codegenTypes';
+import { downloadAdkProjectZip } from '../adapters/adk/exportZip';
 import './SpecificationPreview.css';
 import './AdkCodePreview.css';
 
@@ -26,6 +27,7 @@ export function AdkCodePreview({ projectName, generation, onClose }: AdkCodePrev
   const firstPath = generation.files[0]?.path ?? '';
   const [selectedPath, setSelectedPath] = useState(firstPath);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [zipState, setZipState] = useState<'idle' | 'saved' | 'failed'>('idle');
 
   const selectedFile = useMemo(
     () => generation.files.find((file) => file.path === selectedPath) ?? generation.files[0],
@@ -60,6 +62,27 @@ export function AdkCodePreview({ projectName, generation, onClose }: AdkCodePrev
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
+  const downloadZip = () => {
+    try {
+      downloadAdkProjectZip(generation);
+      setZipState('saved');
+      window.setTimeout(() => setZipState('idle'), 1800);
+    } catch {
+      setZipState('failed');
+    }
+  };
+
+  const footerMessage = (() => {
+    if (copyState === 'copied') return 'コピーしました';
+    if (copyState === 'failed') return 'コピーできませんでした';
+    if (zipState === 'saved') return 'ZIPを保存しました';
+    if (zipState === 'failed') return 'ZIPを作成できませんでした';
+    if (!generation.staticCheck.canExport) {
+      return `ZIP停止: Static Error ${generation.staticCheck.errors.length}`;
+    }
+    return `ZIP Export可能: ${generation.packageName}/`;
+  })();
+
   return (
     <div className="spec-preview-backdrop" onClick={onClose}>
       <section
@@ -72,8 +95,8 @@ export function AdkCodePreview({ projectName, generation, onClose }: AdkCodePrev
         <div className="spec-preview__grabber" aria-hidden="true" />
         <header className="spec-preview__header">
           <div>
-            <div className="spec-preview__eyebrow">Google ADK Code Generator</div>
-            <h2>ADK Python Preview</h2>
+            <div className="spec-preview__eyebrow">Google ADK Project Generator</div>
+            <h2>ADK Python Project</h2>
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label="コードを閉じる">
             ×
@@ -87,8 +110,38 @@ export function AdkCodePreview({ projectName, generation, onClose }: AdkCodePrev
           <span className={`spec-status ${generation.todoCount > 0 ? 'spec-status--warning' : ''}`}>
             TODO {generation.todoCount}
           </span>
+          <span className={`spec-status ${generation.staticCheck.errors.length > 0 ? 'spec-status--error' : ''}`}>
+            Static E{generation.staticCheck.errors.length}
+          </span>
+          <span className={`spec-status ${generation.staticCheck.warnings.length > 0 ? 'spec-status--warning' : ''}`}>
+            W{generation.staticCheck.warnings.length}
+          </span>
           <span>{projectName}</span>
         </div>
+
+        <details className="code-static-check" open={generation.staticCheck.errors.length > 0}>
+          <summary>
+            Static check: {generation.staticCheck.canExport ? 'PASS' : 'BLOCKED'}
+          </summary>
+          <div className="code-static-check__issues">
+            {generation.staticCheck.issues.length === 0 ? (
+              <div className="code-static-check__empty">構造上の問題は検出されませんでした。</div>
+            ) : (
+              generation.staticCheck.issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  className={`code-static-check__issue code-static-check__issue--${issue.severity}`}
+                >
+                  <strong>{issue.severity.toUpperCase()}</strong>
+                  <span>
+                    {issue.filePath ? `${issue.filePath}: ` : ''}
+                    {issue.message}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </details>
 
         <nav className="code-file-tabs" aria-label="Generated files">
           {generation.files.map((file) => (
@@ -108,16 +161,18 @@ export function AdkCodePreview({ projectName, generation, onClose }: AdkCodePrev
         </pre>
 
         <footer className="spec-preview__footer">
-          <span className="spec-preview__copy-state">
-            {copyState === 'copied'
-              ? 'コピーしました'
-              : copyState === 'failed'
-                ? 'コピーできませんでした'
-                : 'ZIP Exportは次STEP'}
-          </span>
+          <span className="spec-preview__copy-state">{footerMessage}</span>
           <div className="spec-preview__actions">
             <button type="button" className="project-action" onClick={downloadFile}>
               ファイル保存
+            </button>
+            <button
+              type="button"
+              className="project-action"
+              onClick={downloadZip}
+              disabled={!generation.staticCheck.canExport}
+            >
+              ZIP保存
             </button>
             <button type="button" className="spec-primary-button" onClick={() => void copyFile()}>
               コピー
