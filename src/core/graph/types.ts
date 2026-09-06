@@ -22,9 +22,55 @@ export type RouterConfig = {
   condition: string;
 };
 
-export type ToolConfig = {
-  toolType: string;
+export type ToolType = 'custom' | 'http' | 'mcp' | 'search' | 'database' | 'file';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type McpTransport = 'stdio' | 'sse';
+export type FileOperation = 'read' | 'write' | 'list';
+
+export type CustomToolConfig = {
+  toolType: 'custom';
+  functionName: string;
+  description: string;
 };
+
+export type HttpToolConfig = {
+  toolType: 'http';
+  method: HttpMethod;
+  url: string;
+};
+
+export type McpToolConfig = {
+  toolType: 'mcp';
+  transport: McpTransport;
+  command: string;
+  args: string;
+  url: string;
+};
+
+export type SearchToolConfig = {
+  toolType: 'search';
+  provider: string;
+};
+
+export type DatabaseToolConfig = {
+  toolType: 'database';
+  connectionRef: string;
+  operation: string;
+};
+
+export type FileToolConfig = {
+  toolType: 'file';
+  operation: FileOperation;
+  path: string;
+};
+
+export type ToolConfig =
+  | CustomToolConfig
+  | HttpToolConfig
+  | McpToolConfig
+  | SearchToolConfig
+  | DatabaseToolConfig
+  | FileToolConfig;
 
 export type HumanInputConfig = {
   prompt: string;
@@ -53,6 +99,7 @@ export type GraphEdge = {
   sourcePortId: 'out';
   targetNodeId: string;
   targetPortId: 'in';
+  routeKey?: string;
 };
 
 export type GraphProject = {

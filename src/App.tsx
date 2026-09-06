@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import { analyzeAdkAdapter } from './adapters/adk/analyze';
+import {
+  loadAdkAdapterSettings,
+  saveAdkAdapterSettings,
+} from './adapters/adk/settings';
 import { Canvas } from './canvas/Canvas';
 import {
   createGraphEdge,
   createGraphNode,
+  removeGraphEdgeFromProject,
   removeGraphNodeFromProject,
+  replaceGraphEdgeInProject,
   replaceGraphNodeInProject,
 } from './core/graph/project';
-import type { GraphNode, GraphProject, NodeKind } from './core/graph/types';
+import type { GraphEdge, GraphNode, GraphProject, NodeKind } from './core/graph/types';
 import { generateCodingPrompt } from './core/prompt/generate';
 import { generateGraphSpecification } from './core/specification/generate';
 import { validateGraphProject } from './core/validation/validate';
@@ -17,6 +23,7 @@ import {
   saveProjectToLocalStorage,
 } from './storage/localStorage';
 import { AdkAdapterPreview } from './ui/AdkAdapterPreview';
+import { EdgeInspector } from './ui/EdgeInspector';
 import { NodeInspector } from './ui/NodeInspector';
 import { PromptPreview } from './ui/PromptPreview';
 import { SpecificationPreview } from './ui/SpecificationPreview';
@@ -26,32 +33,47 @@ import './styles.css';
 
 export default function App() {
   const [project, setProject] = useState<GraphProject>(loadProjectFromLocalStorage);
+  const [adkSettings, setAdkSettings] = useState(loadAdkAdapterSettings);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
   const [isPromptOpen, setPromptOpen] = useState(false);
   const [isAdkOpen, setAdkOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedEdge = project.edges.find((edge) => edge.id === selectedEdgeId) ?? null;
+  const selectedEdgeSource = selectedEdge
+    ? project.nodes.find((node) => node.id === selectedEdge.sourceNodeId) ?? null
+    : null;
+  const selectedEdgeTarget = selectedEdge
+    ? project.nodes.find((node) => node.id === selectedEdge.targetNodeId) ?? null
+    : null;
+
   const validation = validateGraphProject(project);
   const specification = generateGraphSpecification(project);
   const codingPrompt = generateCodingPrompt(project, specification, validation);
-  const adkAnalysis = analyzeAdkAdapter(project);
+  const adkAnalysis = analyzeAdkAdapter(project, adkSettings);
   const selectedNodeIssues = selectedNodeId
     ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
+    : [];
+  const selectedEdgeIssues = selectedEdgeId
+    ? validation.issues.filter((issue) => issue.edgeId === selectedEdgeId)
     : [];
 
   useEffect(() => {
     saveProjectToLocalStorage(project);
   }, [project]);
 
+  useEffect(() => {
+    saveAdkAdapterSettings(adkSettings);
+  }, [adkSettings]);
+
   const addNode = (kind: NodeKind) => {
     setProject((current) => {
       const kindIndex = current.nodes.filter((node) => node.kind === kind).length;
-      const node = createGraphNode(kind, kindIndex, current.nodes.length);
-
       return {
         ...current,
-        nodes: [...current.nodes, node],
+        nodes: [...current.nodes, createGraphNode(kind, kindIndex, current.nodes.length)],
       };
     });
   };
@@ -68,15 +90,8 @@ export default function App() {
       const duplicate = current.edges.some(
         (edge) => edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId,
       );
-
-      if (duplicate) {
-        return current;
-      }
-
-      return {
-        ...current,
-        edges: [...current.edges, createGraphEdge(sourceNodeId, targetNodeId)],
-      };
+      if (duplicate) return current;
+      return { ...current, edges: [...current.edges, createGraphEdge(sourceNodeId, targetNodeId)] };
     });
   };
 
@@ -84,20 +99,25 @@ export default function App() {
     setProject((current) => replaceGraphNodeInProject(current, node));
   };
 
+  const updateEdge = (edge: GraphEdge) => {
+    setProject((current) => replaceGraphEdgeInProject(current, edge));
+  };
+
   const deleteNode = (nodeId: string) => {
     setProject((current) => removeGraphNodeFromProject(current, nodeId));
     setSelectedNodeId(null);
   };
 
+  const deleteEdge = (edgeId: string) => {
+    setProject((current) => removeGraphEdgeFromProject(current, edgeId));
+    setSelectedEdgeId(null);
+  };
+
   const importProject = async (file: File) => {
     try {
-      const text = await file.text();
-      const importedProject = parseGraphProjectJson(text);
+      const importedProject = parseGraphProjectJson(await file.text());
       setProject(importedProject);
-      setSelectedNodeId(null);
-      setSpecificationOpen(false);
-      setPromptOpen(false);
-      setAdkOpen(false);
+      closeOverlays();
       window.alert('Graph JSONを読み込みました。');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'JSONの読み込みに失敗しました。';
@@ -107,6 +127,7 @@ export default function App() {
 
   const closeOverlays = () => {
     setSelectedNodeId(null);
+    setSelectedEdgeId(null);
     setSpecificationOpen(false);
     setPromptOpen(false);
     setAdkOpen(false);
@@ -146,13 +167,15 @@ export default function App() {
           edges={project.edges}
           validationIssues={validation.issues}
           selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
           onNodesChange={updateNodes}
           onConnectNodes={connectNodes}
           onSelectNode={setSelectedNodeId}
+          onSelectEdge={setSelectedEdgeId}
         />
       </section>
       <footer className="status-bar">
-        STEP 3A — Google ADK 2.x Graph WorkflowへのMapping readinessを確認
+        STEP 3B — Router routeKey / Tool設定 / ADK default model
       </footer>
 
       <NodeInspector
@@ -161,6 +184,16 @@ export default function App() {
         onChange={updateNode}
         onDelete={deleteNode}
         onClose={() => setSelectedNodeId(null)}
+      />
+
+      <EdgeInspector
+        edge={selectedEdge}
+        sourceNode={selectedEdgeSource}
+        targetNode={selectedEdgeTarget}
+        issues={selectedEdgeIssues}
+        onChange={updateEdge}
+        onDelete={deleteEdge}
+        onClose={() => setSelectedEdgeId(null)}
       />
 
       {isSpecificationOpen && (
@@ -187,6 +220,8 @@ export default function App() {
         <AdkAdapterPreview
           projectName={project.name}
           analysis={adkAnalysis}
+          settings={adkSettings}
+          onSettingsChange={setAdkSettings}
           onClose={() => setAdkOpen(false)}
         />
       )}

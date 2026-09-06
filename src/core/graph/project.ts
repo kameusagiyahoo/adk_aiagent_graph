@@ -1,4 +1,5 @@
-import type { GraphEdge, GraphNode, GraphProject, NodeKind } from './types';
+import type { GraphEdge, GraphNode, GraphProject, NodeKind, ToolType } from './types';
+import { createToolConfig } from './toolConfig';
 
 const createId = () => {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -54,7 +55,7 @@ export const createGraphNode = (
         kind,
         name: `Tool ${kindIndex + 1}`,
         description: 'API・検索・計算など外部処理を実行する',
-        config: { toolType: 'custom' },
+        config: createToolConfig('custom'),
       };
     case 'humanInput':
       return {
@@ -75,6 +76,14 @@ export const createGraphNode = (
   }
 };
 
+export const changeToolType = (node: GraphNode, toolType: ToolType): GraphNode => {
+  if (node.kind !== 'tool') {
+    return node;
+  }
+
+  return { ...node, config: createToolConfig(toolType) };
+};
+
 export const createGraphEdge = (sourceNodeId: string, targetNodeId: string): GraphEdge => ({
   id: `edge-${createId()}`,
   sourceNodeId,
@@ -91,6 +100,14 @@ export const replaceGraphNodeInProject = (
   nodes: project.nodes.map((node) => (node.id === updatedNode.id ? updatedNode : node)),
 });
 
+export const replaceGraphEdgeInProject = (
+  project: GraphProject,
+  updatedEdge: GraphEdge,
+): GraphProject => ({
+  ...project,
+  edges: project.edges.map((edge) => (edge.id === updatedEdge.id ? updatedEdge : edge)),
+});
+
 export const removeGraphNodeFromProject = (
   project: GraphProject,
   nodeId: string,
@@ -100,4 +117,12 @@ export const removeGraphNodeFromProject = (
   edges: project.edges.filter(
     (edge) => edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId,
   ),
+});
+
+export const removeGraphEdgeFromProject = (
+  project: GraphProject,
+  edgeId: string,
+): GraphProject => ({
+  ...project,
+  edges: project.edges.filter((edge) => edge.id !== edgeId),
 });

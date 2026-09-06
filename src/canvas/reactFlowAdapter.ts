@@ -26,11 +26,16 @@ export const graphNodeToCanvasNode = (
   },
 });
 
-export const graphEdgeToCanvasEdge = (edge: GraphEdge): CanvasEdge => ({
+export const graphEdgeToCanvasEdge = (edge: GraphEdge, selected = false): CanvasEdge => ({
   id: edge.id,
   source: edge.sourceNodeId,
   sourceHandle: edge.sourcePortId,
   target: edge.targetNodeId,
   targetHandle: edge.targetPortId,
   type: 'smoothstep',
+  selected,
+  label: edge.routeKey?.trim() || undefined,
+  interactionWidth: 30,
+  labelBgPadding: [6, 3],
+  labelBgBorderRadius: 6,
 });

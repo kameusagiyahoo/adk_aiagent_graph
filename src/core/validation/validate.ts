@@ -1,8 +1,7 @@
-import type { GraphProject } from '../graph/types';
+import type { GraphProject, ToolConfig } from '../graph/types';
 import {
   defaultValidationPolicy,
   type ValidationIssue,
-  type ValidationIssueCode,
   type ValidationPolicy,
   type ValidationResult,
   type ValidationSeverity,
@@ -14,13 +13,30 @@ const pushIssue = (issues: ValidationIssue[], issue: IssueInput) => {
   issues.push({ ...issue, id: `${issue.code}-${issues.length + 1}` });
 };
 
+const missingToolMessage = (config: ToolConfig): string | null => {
+  switch (config.toolType) {
+    case 'custom':
+      return config.functionName.trim() ? null : 'Custom ToolのFunction nameを入力してください。';
+    case 'http':
+      return config.url.trim() ? null : 'HTTP ToolのURLを入力してください。';
+    case 'mcp':
+      if (config.transport === 'stdio') {
+        return config.command.trim() ? null : 'MCP stdioのCommandを入力してください。';
+      }
+      return config.url.trim() ? null : 'MCP SSEのURLを入力してください。';
+    case 'search':
+      return config.provider.trim() ? null : 'Search ToolのProviderを入力してください。';
+    case 'database':
+      return config.connectionRef.trim() ? null : 'Database ToolのConnection refを入力してください。';
+    case 'file':
+      return config.path.trim() ? null : 'File ToolのPathを入力してください。';
+  }
+};
+
 const findCycleNodeIds = (project: GraphProject) => {
   const adjacency = new Map<string, string[]>();
   const nodeIds = new Set(project.nodes.map((node) => node.id));
-
-  for (const node of project.nodes) {
-    adjacency.set(node.id, []);
-  }
+  project.nodes.forEach((node) => adjacency.set(node.id, []));
 
   for (const edge of project.edges) {
     if (nodeIds.has(edge.sourceNodeId) && nodeIds.has(edge.targetNodeId)) {
@@ -34,23 +50,17 @@ const findCycleNodeIds = (project: GraphProject) => {
   const cycleNodeIds = new Set<string>();
 
   const visit = (nodeId: string) => {
-    if (visited.has(nodeId)) {
-      return;
-    }
-
+    if (visited.has(nodeId)) return;
     visiting.add(nodeId);
     path.push(nodeId);
 
     for (const nextId of adjacency.get(nodeId) ?? []) {
       if (visiting.has(nextId)) {
         const startIndex = path.lastIndexOf(nextId);
-        for (const cycleNodeId of path.slice(startIndex)) {
-          cycleNodeIds.add(cycleNodeId);
-        }
-        continue;
+        path.slice(startIndex).forEach((id) => cycleNodeIds.add(id));
+      } else {
+        visit(nextId);
       }
-
-      visit(nextId);
     }
 
     path.pop();
@@ -58,10 +68,7 @@ const findCycleNodeIds = (project: GraphProject) => {
     visited.add(nodeId);
   };
 
-  for (const node of project.nodes) {
-    visit(node.id);
-  }
-
+  project.nodes.forEach((node) => visit(node.id));
   return cycleNodeIds;
 };
 
@@ -74,6 +81,8 @@ export const validateGraphProject = (
   const edgeIdCounts = new Map<string, number>();
   const incomingCounts = new Map<string, number>();
   const outgoingCounts = new Map<string, number>();
+  const nodeById = new Map(project.nodes.map((node) => [node.id, node]));
+  const routerRouteEdges = new Map<string, Map<string, string[]>>();
 
   for (const node of project.nodes) {
     nodeIdCounts.set(node.id, (nodeIdCounts.get(node.id) ?? 0) + 1);
@@ -96,7 +105,6 @@ export const validateGraphProject = (
 
   for (const edge of project.edges) {
     edgeIdCounts.set(edge.id, (edgeIdCounts.get(edge.id) ?? 0) + 1);
-
     const sourceExists = nodeIds.has(edge.sourceNodeId);
     const targetExists = nodeIds.has(edge.targetNodeId);
 
@@ -112,6 +120,26 @@ export const validateGraphProject = (
 
     outgoingCounts.set(edge.sourceNodeId, (outgoingCounts.get(edge.sourceNodeId) ?? 0) + 1);
     incomingCounts.set(edge.targetNodeId, (incomingCounts.get(edge.targetNodeId) ?? 0) + 1);
+
+    const sourceNode = nodeById.get(edge.sourceNodeId);
+    if (sourceNode?.kind === 'router') {
+      const routeKey = edge.routeKey?.trim();
+      if (!routeKey) {
+        pushIssue(issues, {
+          code: 'missing-router-route-key',
+          severity: 'error',
+          message: 'Routerから出るEdgeにはRoute keyを設定してください。',
+          nodeId: sourceNode.id,
+          edgeId: edge.id,
+        });
+      } else {
+        const keys = routerRouteEdges.get(sourceNode.id) ?? new Map<string, string[]>();
+        const edgeIds = keys.get(routeKey) ?? [];
+        edgeIds.push(edge.id);
+        keys.set(routeKey, edgeIds);
+        routerRouteEdges.set(sourceNode.id, keys);
+      }
+    }
   }
 
   for (const [edgeId, count] of edgeIdCounts) {
@@ -122,6 +150,22 @@ export const validateGraphProject = (
         message: `Edge ID「${edgeId}」が重複しています。`,
         edgeId,
       });
+    }
+  }
+
+  for (const [routerId, keys] of routerRouteEdges) {
+    for (const [routeKey, edgeIds] of keys) {
+      if (edgeIds.length > 1) {
+        edgeIds.forEach((edgeId) =>
+          pushIssue(issues, {
+            code: 'duplicate-router-route-key',
+            severity: 'error',
+            message: `Route key「${routeKey}」が同じRouter内で重複しています。`,
+            nodeId: routerId,
+            edgeId,
+          }),
+        );
+      }
     }
   }
 
@@ -167,6 +211,18 @@ export const validateGraphProject = (
           });
         }
         break;
+      case 'tool': {
+        const message = missingToolMessage(node.config);
+        if (message) {
+          pushIssue(issues, {
+            code: 'missing-tool-config',
+            severity: 'error',
+            message,
+            nodeId: node.id,
+          });
+        }
+        break;
+      }
       case 'humanInput':
         if (!node.config.prompt.trim()) {
           pushIssue(issues, {
@@ -186,8 +242,6 @@ export const validateGraphProject = (
             nodeId: node.id,
           });
         }
-        break;
-      case 'tool':
         break;
     }
 

@@ -31,9 +31,11 @@ type CanvasProps = {
   edges: GraphEdge[];
   validationIssues: ValidationIssue[];
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   onNodesChange: (nodes: GraphNode[]) => void;
   onConnectNodes: (sourceNodeId: string, targetNodeId: string) => void;
   onSelectNode: (nodeId: string | null) => void;
+  onSelectEdge: (edgeId: string | null) => void;
 };
 
 export function Canvas({
@@ -41,9 +43,11 @@ export function Canvas({
   edges,
   validationIssues,
   selectedNodeId,
+  selectedEdgeId,
   onNodesChange,
   onConnectNodes,
   onSelectNode,
+  onSelectEdge,
 }: CanvasProps) {
   const canvasNodes = nodes.map((node) =>
     graphNodeToCanvasNode(
@@ -52,7 +56,9 @@ export function Canvas({
       validationIssues.filter((issue) => issue.nodeId === node.id),
     ),
   );
-  const canvasEdges = edges.map(graphEdgeToCanvasEdge);
+  const canvasEdges = edges.map((edge) =>
+    graphEdgeToCanvasEdge(edge, edge.id === selectedEdgeId),
+  );
 
   const handleNodesChange = (changes: NodeChange[]) => {
     const nextCanvasNodes = applyNodeChanges(changes, canvasNodes);
@@ -82,8 +88,18 @@ export function Canvas({
         nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onConnect={handleConnect}
-        onNodeClick={(_, node) => onSelectNode(node.id)}
-        onPaneClick={() => onSelectNode(null)}
+        onNodeClick={(_, node) => {
+          onSelectEdge(null);
+          onSelectNode(node.id);
+        }}
+        onEdgeClick={(_, edge) => {
+          onSelectNode(null);
+          onSelectEdge(edge.id);
+        }}
+        onPaneClick={() => {
+          onSelectNode(null);
+          onSelectEdge(null);
+        }}
         fitView
         minZoom={0.25}
         maxZoom={2}

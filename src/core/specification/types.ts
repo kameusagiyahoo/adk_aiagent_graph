@@ -16,6 +16,7 @@ export type SpecificationConnection = {
   targetNodeId: string;
   sourceName: string;
   targetName: string;
+  routeKey?: string;
 };
 
 export type SpecificationDocument = {
