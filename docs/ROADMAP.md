@@ -54,10 +54,29 @@
 - スマホ向けPrompt Preview
 - Promptコピー / `.md`保存
 
-## STEP 3A — next
-- Google ADK Adapterの設計
-- Graph IR → ADK概念のMappingを公式仕様で確認
-- Adapterの入出力形式を定義
-- まずコードPreview、後でZIP Export
+## STEP 3A — done
+- Google ADK 2.x公式仕様を基準にMappingを再整理
+- 新規変換の第一候補をGraph-based `Workflow(edges=[...])` に決定
+- Agent → LlmAgent
+- Router → route Function Node + conditional edges
+- Tool → FunctionTool / McpToolset等
+- HumanInput → RequestInput系HITL node
+- Join → JoinNode
+- NodeごとのADK変換 readiness（READY / PARTIAL / BLOCKED）
+- Browser上のADK変換チェックPreview
 
-その後にADK用コード生成とRuntime Bridgeへ進む。
+## STEP 3B — next
+- GraphEdgeへRouter用 `routeKey` / branch labelを追加
+- Edge選択・編集UI
+- Router outgoing EdgeではrouteKeyを必須化
+- ADK Adapter設定としてdefault modelを追加
+- Tool固有設定schemaの第一段階を設計
+
+## STEP 3C — later
+- Python ADK 2.xコードPreview
+- `Workflow(edges=[...])` 生成
+- Agent / Router / HumanInput / Joinのコード生成
+- Toolは設定が揃ったtypeから段階的に生成
+- requirements / entry point生成
+
+その後にZIP ExportとRuntime Bridgeへ進む。
