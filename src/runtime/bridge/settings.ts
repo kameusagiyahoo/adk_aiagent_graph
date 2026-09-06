@@ -7,6 +7,7 @@ export const defaultRuntimeBridgeSettings: RuntimeBridgeSettings = {
   token: '',
   mode: 'mock',
   vllmBaseUrl: 'http://127.0.0.1:8000/v1',
+  vllmModel: '',
 };
 
 const normalizeMode = (value: unknown): RuntimeMode =>
@@ -30,6 +31,7 @@ export const loadRuntimeBridgeSettings = (): RuntimeBridgeSettings => {
         typeof value.vllmBaseUrl === 'string' && value.vllmBaseUrl.trim()
           ? value.vllmBaseUrl.trim()
           : defaultRuntimeBridgeSettings.vllmBaseUrl,
+      vllmModel: typeof value.vllmModel === 'string' ? value.vllmModel.trim() : '',
     };
   } catch (error) {
     console.warn('Runtime Bridge settings could not be loaded.', error);
