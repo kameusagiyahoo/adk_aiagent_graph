@@ -62,6 +62,7 @@ class ValidateRequest(BaseModel):
 class ExecuteRequest(ValidateRequest):
     inputText: str = Field(min_length=1, max_length=12000)
     mode: str = Field(pattern="^(openai|vllm)$")
+    model: str = Field(min_length=1, max_length=300)
     vllmBaseUrl: str | None = None
 
 
@@ -147,6 +148,7 @@ def execute(request: ExecuteRequest):
         [item.model_dump() for item in request.files],
         request.inputText,
         mode=request.mode,
+        model=request.model,
         vllm_base_url=request.vllmBaseUrl,
     )
 
