@@ -23,6 +23,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Check Local Bridge Python syntax
+        run: python -m py_compile runtime_bridge/app.py runtime_bridge/validator.py
       - name: Clean generated Pages files
         run: rm -rf docs/assets docs/index.html
       - run: npm run build
