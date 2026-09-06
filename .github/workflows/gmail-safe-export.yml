@@ -1,0 +1,82 @@
+name: Build Gmail-safe source ZIP
+
+on:
+  push:
+    branches: [gmail-safe-export]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Gmail-safe source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/gmail-share/adk_aiagent_graph_gmail_safe"
+          mkdir -p "$ROOT"
+
+          rsync -a ./ "$ROOT/" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'runtime_bridge/' \
+            --exclude 'docs/assets/' \
+            --exclude 'docs/index.html' \
+            --exclude 'node_modules/' \
+            --exclude '*.zip' \
+            --exclude '*.tgz' \
+            --exclude '*.gz'
+
+          cat > "$ROOT/GMAIL_SHARE_README.md" <<'EOF'
+          # Gmail共有用ソース
+
+          このZIPはGmail添付向けの非実行・ソース共有版です。
+
+          除外済み:
+          - `runtime_bridge/`（ローカルPython実行サーバ）
+          - `.github/`（CI/CD実行設定）
+          - `docs/assets/`（Vite生成済みJavaScript/CSS）
+          - `docs/index.html`（生成済み公開ページ入口）
+          - `node_modules/`、圧縮生成物
+
+          React/TypeScriptの設計ソース、Graph IR、Validator、ADK Adapter/Generator、Mock Debugger、Markdown設計資料は残しています。
+
+          Gmailでブロックされる拡張子がZIP内に残っていないことをWorkflowで検査しています。
+          この共有版は、そのまま実行するための配布物ではありません。実行環境は元リポジトリから取得してください。
+          EOF
+
+          python - <<'PY'
+          from pathlib import Path
+          root = Path(__import__('os').environ['RUNNER_TEMP']) / 'gmail-share' / 'adk_aiagent_graph_gmail_safe'
+          blocked = {
+              '.ade','.adp','.apk','.appx','.appxbundle','.bat','.cab','.chm','.cmd','.com','.cpl',
+              '.diagcab','.diagcfg','.diagpkg','.dll','.dmg','.ex','.ex_','.exe','.hta','.img','.ins',
+              '.iso','.isp','.jar','.jnlp','.js','.jse','.lib','.lnk','.mde','.mjs','.msc','.msi',
+              '.msix','.msixbundle','.msp','.mst','.nsh','.pif','.ps1','.scr','.sct','.shb','.sys',
+              '.vb','.vbe','.vbs','.vhd','.vxd','.wsc','.wsf','.wsh','.xll'
+          }
+          bad = [p for p in root.rglob('*') if p.is_file() and p.suffix.lower() in blocked]
+          if bad:
+              raise SystemExit('Blocked Gmail file type remains:\n' + '\n'.join(str(p.relative_to(root)) for p in bad))
+          print(f'Gmail-safe scan OK: {sum(1 for p in root.rglob("*") if p.is_file())} files')
+          PY
+
+      - name: Create ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/gmail-share"
+          zip -qr "$GITHUB_WORKSPACE/adk_aiagent_graph_gmail_safe.zip" adk_aiagent_graph_gmail_safe
+          ls -lh "$GITHUB_WORKSPACE/adk_aiagent_graph_gmail_safe.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adk-aiagent-graph-gmail-safe
+          path: adk_aiagent_graph_gmail_safe.zip
+          if-no-files-found: error
+          retention-days: 1
