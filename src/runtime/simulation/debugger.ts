@@ -174,3 +174,25 @@ export const sessionToSimulationResult = (session: SimulationDebugSession): Simu
   edgeIds: session.edgeIds,
   warnings: session.warnings,
 });
+
+export const runSimulationDebugToCompletion = (
+  project: GraphProject,
+  routeChoices: SimulationRouteChoices,
+  config: SimulationDebugConfig,
+): SimulationResult => {
+  let session = createSimulationDebugSession(project, routeChoices, config);
+  const maxSteps = Math.max(1, project.nodes.length + project.edges.length + 10);
+  let guard = 0;
+  while (!session.completed && guard < maxSteps) {
+    session = advanceSimulationDebugSession(project, session, routeChoices, config, { bypassBreakpoint: true });
+    guard += 1;
+  }
+  if (!session.completed) {
+    session = {
+      ...session,
+      completed: true,
+      warnings: [...new Set([...session.warnings, `Mock比較を安全上限 ${maxSteps} stepで停止しました。`])],
+    };
+  }
+  return sessionToSimulationResult(session);
+};
