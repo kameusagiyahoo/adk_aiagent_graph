@@ -12,6 +12,7 @@ type ToolbarProps = {
   onOpenPrompt: () => void;
   onOpenAdk: () => void;
   onOpenAdkCode: () => void;
+  onOpenRuntime: () => void;
 };
 
 const nodeButtons: Array<{ kind: NodeKind; label: string }> = [
@@ -32,6 +33,7 @@ export function Toolbar({
   onOpenPrompt,
   onOpenAdk,
   onOpenAdkCode,
+  onOpenRuntime,
 }: ToolbarProps) {
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -66,6 +68,9 @@ export function Toolbar({
             </button>
             <button type="button" className="project-action" onClick={onOpenAdkCode}>
               ADK Code
+            </button>
+            <button type="button" className="project-action" onClick={onOpenRuntime}>
+              Runtime
             </button>
             <button type="button" className="project-action" onClick={onExport}>
               書出
