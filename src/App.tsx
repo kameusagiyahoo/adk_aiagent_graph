@@ -18,6 +18,10 @@ import type { GraphEdge, GraphNode, GraphProject, NodeKind } from './core/graph/
 import { generateCodingPrompt } from './core/prompt/generate';
 import { generateGraphSpecification } from './core/specification/generate';
 import { validateGraphProject } from './core/validation/validate';
+import {
+  loadRuntimeBridgeSettings,
+  saveRuntimeBridgeSettings,
+} from './runtime/bridge/settings';
 import { downloadGraphProjectJson, parseGraphProjectJson } from './storage/json';
 import {
   loadProjectFromLocalStorage,
@@ -28,6 +32,7 @@ import { AdkCodePreview } from './ui/AdkCodePreview';
 import { EdgeInspector } from './ui/EdgeInspector';
 import { NodeInspector } from './ui/NodeInspector';
 import { PromptPreview } from './ui/PromptPreview';
+import { RuntimeValidationPreview } from './ui/RuntimeValidationPreview';
 import { SpecificationPreview } from './ui/SpecificationPreview';
 import { Toolbar } from './ui/Toolbar';
 import { ValidationSummary } from './ui/ValidationSummary';
@@ -36,12 +41,14 @@ import './styles.css';
 export default function App() {
   const [project, setProject] = useState<GraphProject>(loadProjectFromLocalStorage);
   const [adkSettings, setAdkSettings] = useState(loadAdkAdapterSettings);
+  const [runtimeSettings, setRuntimeSettings] = useState(loadRuntimeBridgeSettings);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
   const [isPromptOpen, setPromptOpen] = useState(false);
   const [isAdkOpen, setAdkOpen] = useState(false);
   const [isAdkCodeOpen, setAdkCodeOpen] = useState(false);
+  const [isRuntimeOpen, setRuntimeOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const selectedEdge = project.edges.find((edge) => edge.id === selectedEdgeId) ?? null;
@@ -71,6 +78,10 @@ export default function App() {
   useEffect(() => {
     saveAdkAdapterSettings(adkSettings);
   }, [adkSettings]);
+
+  useEffect(() => {
+    saveRuntimeBridgeSettings(runtimeSettings);
+  }, [runtimeSettings]);
 
   const addNode = (kind: NodeKind) => {
     setProject((current) => {
@@ -136,6 +147,7 @@ export default function App() {
     setPromptOpen(false);
     setAdkOpen(false);
     setAdkCodeOpen(false);
+    setRuntimeOpen(false);
   };
 
   const openSpecification = () => {
@@ -158,6 +170,11 @@ export default function App() {
     setAdkCodeOpen(true);
   };
 
+  const openRuntime = () => {
+    closeOverlays();
+    setRuntimeOpen(true);
+  };
+
   return (
     <main className="app-shell">
       <Toolbar
@@ -170,6 +187,7 @@ export default function App() {
         onOpenPrompt={openPrompt}
         onOpenAdk={openAdk}
         onOpenAdkCode={openAdkCode}
+        onOpenRuntime={openRuntime}
       />
       <section className="workspace">
         <ValidationSummary result={validation} />
@@ -186,7 +204,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 3D — ADK Project静的チェック / README / ZIP Export
+        STEP 4A — Local Bridge / Python構文・ADK import・Workflow構築検証
       </footer>
 
       <NodeInspector
@@ -242,6 +260,15 @@ export default function App() {
           projectName={project.name}
           generation={adkGeneration}
           onClose={() => setAdkCodeOpen(false)}
+        />
+      )}
+
+      {isRuntimeOpen && (
+        <RuntimeValidationPreview
+          generation={adkGeneration}
+          settings={runtimeSettings}
+          onSettingsChange={setRuntimeSettings}
+          onClose={() => setRuntimeOpen(false)}
         />
       )}
     </main>
