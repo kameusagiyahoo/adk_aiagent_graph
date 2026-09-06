@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { analyzeAdkAdapter } from './adapters/adk/analyze';
 import { Canvas } from './canvas/Canvas';
 import {
   createGraphEdge,
@@ -15,6 +16,7 @@ import {
   loadProjectFromLocalStorage,
   saveProjectToLocalStorage,
 } from './storage/localStorage';
+import { AdkAdapterPreview } from './ui/AdkAdapterPreview';
 import { NodeInspector } from './ui/NodeInspector';
 import { PromptPreview } from './ui/PromptPreview';
 import { SpecificationPreview } from './ui/SpecificationPreview';
@@ -27,11 +29,13 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
   const [isPromptOpen, setPromptOpen] = useState(false);
+  const [isAdkOpen, setAdkOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const validation = validateGraphProject(project);
   const specification = generateGraphSpecification(project);
   const codingPrompt = generateCodingPrompt(project, specification, validation);
+  const adkAnalysis = analyzeAdkAdapter(project);
   const selectedNodeIssues = selectedNodeId
     ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
     : [];
@@ -93,6 +97,7 @@ export default function App() {
       setSelectedNodeId(null);
       setSpecificationOpen(false);
       setPromptOpen(false);
+      setAdkOpen(false);
       window.alert('Graph JSONを読み込みました。');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'JSONの読み込みに失敗しました。';
@@ -100,16 +105,26 @@ export default function App() {
     }
   };
 
-  const openSpecification = () => {
+  const closeOverlays = () => {
     setSelectedNodeId(null);
+    setSpecificationOpen(false);
     setPromptOpen(false);
+    setAdkOpen(false);
+  };
+
+  const openSpecification = () => {
+    closeOverlays();
     setSpecificationOpen(true);
   };
 
   const openPrompt = () => {
-    setSelectedNodeId(null);
-    setSpecificationOpen(false);
+    closeOverlays();
     setPromptOpen(true);
+  };
+
+  const openAdk = () => {
+    closeOverlays();
+    setAdkOpen(true);
   };
 
   return (
@@ -122,6 +137,7 @@ export default function App() {
         onImport={importProject}
         onOpenSpecification={openSpecification}
         onOpenPrompt={openPrompt}
+        onOpenAdk={openAdk}
       />
       <section className="workspace">
         <ValidationSummary result={validation} />
@@ -136,7 +152,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 2C — SpecificationとValidationからCoding LLM向けPromptを自動生成
+        STEP 3A — Google ADK 2.x Graph WorkflowへのMapping readinessを確認
       </footer>
 
       <NodeInspector
@@ -164,6 +180,14 @@ export default function App() {
           errorCount={codingPrompt.validationErrorCount}
           warningCount={codingPrompt.validationWarningCount}
           onClose={() => setPromptOpen(false)}
+        />
+      )}
+
+      {isAdkOpen && (
+        <AdkAdapterPreview
+          projectName={project.name}
+          analysis={adkAnalysis}
+          onClose={() => setAdkOpen(false)}
         />
       )}
     </main>
