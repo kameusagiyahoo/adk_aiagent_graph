@@ -14,10 +14,8 @@
 - Edge接続
 
 ## STEP 1D — done
-- Node選択
-- Node設定編集
-- Node削除
-- Node削除時に関連Edgeも削除
+- Node選択 / 設定編集 / 削除
+- Edge連動削除
 - スマホ向けBottom Sheet Inspector
 
 ## STEP 1E — done
@@ -27,40 +25,38 @@
 ## STEP 2A — done
 - UI非依存Validator
 - Error / Warning
-- Node設定 / Graph構造検証
-- Cycle policy
+- Node / Edge / Router / Join / Cycle検証
 
 ## STEP 2B — done
-- Graph Specification Generator
+- Graph IRからSpecification生成
 - Markdown Preview / Copy / Save
 
 ## STEP 2C — done
-- Coding LLM Prompt Generator
+- Coding LLM向けPrompt Generator
 - Validationを含む実装指示
 
 ## STEP 3A — done
-- Google ADK 2.x Graph Workflow Mapping調査
+- Google ADK 2.x Graph Workflowの公式Mapping確認
 - ADK Adapter Readiness
-- READY / PARTIAL / BLOCKED判定
+- Graph IRとADK固有設定を分離
 
 ## STEP 3B — done
-- Edge選択 / Edge削除
-- Router EdgeのRoute key編集
-- Router routeKey必須・重複Validation
-- Tool設定を種別ごとの構造化configへ拡張
-- 旧Tool JSONを新configへ読み込み時に移行
-- ADK default modelをAdapter設定として分離
-- ADK ReadinessをrouteKey / Tool config / default modelへ対応
-- SpecificationへRoute key / Tool詳細を反映
+- Router Edge routeKey
+- Edge Inspector
+- Tool設定のdiscriminated union化
+- ADK default model設定
+- ADK向けValidation拡張
 
-## STEP 3C — next
-- Google ADK Python Code Generator
-- Browser上でCode Preview
-- READYなNodeは具体コードへ変換
-- PARTIAL / BLOCKEDはTODOを明示
-- `agent.py` / requirements候補 / mapping report
+## STEP 3C — done
+- Graph IRからGoogle ADK Pythonコードを生成
+- `agent.py` / `requirements.txt` / `mapping.md`
+- ブラウザCode Preview / Copy / 個別保存
+- 未確定のRouter/ToolロジックはTODOとして明示
+- 公開APIで保証できないMCP決定論的NodeはPARTIAL扱い
 
-その後:
-- ZIP Export
-- Runtime Bridge
-- 実行TraceをCanvasへ戻す
+## STEP 3D — next
+- 生成ファイルのZIP Export
+- 最小ADK Project構成（`__init__.py` / README等）
+- 生成物の静的検証
+
+その後にLocal Runtime Bridgeと実行Trace可視化へ進む。

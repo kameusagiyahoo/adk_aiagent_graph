@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { analyzeAdkAdapter } from './adapters/adk/analyze';
+import { generateAdkProject } from './adapters/adk/codegen';
 import {
   loadAdkAdapterSettings,
   saveAdkAdapterSettings,
@@ -23,6 +24,7 @@ import {
   saveProjectToLocalStorage,
 } from './storage/localStorage';
 import { AdkAdapterPreview } from './ui/AdkAdapterPreview';
+import { AdkCodePreview } from './ui/AdkCodePreview';
 import { EdgeInspector } from './ui/EdgeInspector';
 import { NodeInspector } from './ui/NodeInspector';
 import { PromptPreview } from './ui/PromptPreview';
@@ -39,6 +41,7 @@ export default function App() {
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
   const [isPromptOpen, setPromptOpen] = useState(false);
   const [isAdkOpen, setAdkOpen] = useState(false);
+  const [isAdkCodeOpen, setAdkCodeOpen] = useState(false);
 
   const selectedNode = project.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const selectedEdge = project.edges.find((edge) => edge.id === selectedEdgeId) ?? null;
@@ -53,6 +56,7 @@ export default function App() {
   const specification = generateGraphSpecification(project);
   const codingPrompt = generateCodingPrompt(project, specification, validation);
   const adkAnalysis = analyzeAdkAdapter(project, adkSettings);
+  const adkGeneration = generateAdkProject(project, adkSettings, validation, adkAnalysis);
   const selectedNodeIssues = selectedNodeId
     ? validation.issues.filter((issue) => issue.nodeId === selectedNodeId)
     : [];
@@ -131,6 +135,7 @@ export default function App() {
     setSpecificationOpen(false);
     setPromptOpen(false);
     setAdkOpen(false);
+    setAdkCodeOpen(false);
   };
 
   const openSpecification = () => {
@@ -148,6 +153,11 @@ export default function App() {
     setAdkOpen(true);
   };
 
+  const openAdkCode = () => {
+    closeOverlays();
+    setAdkCodeOpen(true);
+  };
+
   return (
     <main className="app-shell">
       <Toolbar
@@ -159,6 +169,7 @@ export default function App() {
         onOpenSpecification={openSpecification}
         onOpenPrompt={openPrompt}
         onOpenAdk={openAdk}
+        onOpenAdkCode={openAdkCode}
       />
       <section className="workspace">
         <ValidationSummary result={validation} />
@@ -175,7 +186,7 @@ export default function App() {
         />
       </section>
       <footer className="status-bar">
-        STEP 3B — Router routeKey / Tool設定 / ADK default model
+        STEP 3C — CanvasからGoogle ADK 2.x Pythonコードを生成
       </footer>
 
       <NodeInspector
@@ -223,6 +234,14 @@ export default function App() {
           settings={adkSettings}
           onSettingsChange={setAdkSettings}
           onClose={() => setAdkOpen(false)}
+        />
+      )}
+
+      {isAdkCodeOpen && (
+        <AdkCodePreview
+          projectName={project.name}
+          generation={adkGeneration}
+          onClose={() => setAdkCodeOpen(false)}
         />
       )}
     </main>

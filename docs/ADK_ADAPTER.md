@@ -1,89 +1,54 @@
 # ADK Adapter
 
-## Boundary
+## 方針
 
 ```text
 Canvas
-  ↓
-Graph IR
-  ↓
-Validator
-  ↓
-ADK Adapter
-  ↓
-Google ADK 2.x Graph Workflow
+  -> Graph IR
+  -> Validator
+  -> ADK Adapter
+  -> ADK Code Generator
+  -> Google ADK Project
 ```
 
-ADK固有仕様は `core/graph` に持ち込まない。
-Adapter固有設定は `src/adapters/adk` が所有する。
+ADK固有仕様を `core/` へ持ち込まない。Graph IRはRuntime非依存を維持する。
 
-## Current mapping
+## Target
 
-| Graph | ADK 2.x |
-|---|---|
-| Agent | `LlmAgent` in `Workflow` |
-| Router | Function Node returning `Event(route=...)` + conditional edge map |
-| Tool / MCP | `McpToolset` |
-| Tool / Custom | `FunctionTool` または tool-backed Function Node |
+- Google ADK 2.x
+- Python
+- Graph-based `Workflow(edges=[...])`
+- `SequentialAgent / ParallelAgent / LoopAgent`を主変換先にしない
+
+## Mapping
+
+| Canvas | ADK |
+| --- | --- |
+| Agent | `Agent` / `LlmAgent` in `Workflow` |
+| Router | Function Node returning `Event(route=...)` + routed edges |
 | HumanInput | Function Node yielding `RequestInput` |
 | Join | `JoinNode` |
-| Edge | `Workflow(edges=[...])` |
+| Tool | Function Node / FunctionTool等のAdapter |
+| MCP Tool | `McpToolset`はLLM Agentへ付与可能。決定論的な単独Graph Tool Nodeは現段階ではPARTIAL |
+| Edge | `Workflow` edges |
+| Router Edge | route key map |
 
-## STEP 3B
+## Code Generator
 
-### Router routeKey
+STEP 3Cではブラウザ上で以下を生成する。
 
-Routerから出るGraph Edgeは `routeKey` を持つ。
-同じRouter内でrouteKeyは一意とする。
-空routeKeyはValidation Error。
+- `agent.py`
+- `requirements.txt`
+- `mapping.md`
 
-```text
-Router
-  ├─ [APPROVE] → Agent
-  └─ [REJECT]  → HumanInput
-```
+生成ポリシー:
 
-ADK Pythonでは概念的に次へ変換する。
+- Canvasにない業務ロジックを推測しない。
+- Routerの自然言語ConditionはPython条件式へ勝手に変換しない。
+- Tool実装・認証・Secretを勝手に生成しない。
+- 未確定箇所は `TODO` / `NotImplementedError` として明示する。
+- Google ADKのprivate moduleをCode Generatorから直接利用しない。
 
-```python
-(router, {
-    "APPROVE": approve_node,
-    "REJECT": reject_node,
-})
-```
+## 次
 
-`DEFAULT_ROUTE` は将来Code GeneratorでADKのdefault route定数へ変換する。
-
-### ADK default model
-
-AgentのmodelはGraph IRへ保存しない。
-ADK Adapter設定として保持する。
-初期値は `gemini-flash-latest`。
-
-Graph IRはframework非依存のAgent意味を保持し、ADK Adapterが `LlmAgent(model=...)` を補う。
-
-### Tool config
-
-Toolは種別だけでなく実行に必要な最小設定をGraph IRへ持つ。
-
-- custom: functionName / description
-- http: method / url
-- mcp: transport + command/args または SSE URL
-- search: provider
-- database: connectionRef / operation
-- file: operation / path
-
-API keyやPasswordなどSecret本体はGraphへ保存しない。
-
-## Official references checked for STEP 3B
-
-- https://adk.dev/workflows/graph-routes/
-- https://adk.dev/workflows/human-input/
-- https://adk.dev/tools/function-tools/
-- https://adk.dev/tools-custom/mcp-tools/
-- https://adk.dev/agents/llm-agents/
-
-## Next
-
-STEP 3Cで、Readinessが許す範囲からPython ADKコードPreviewを生成する。
-BLOCKED項目は推測で補完せず、生成コード内TODOとして残す。
+STEP 3DでZIP Exportと最小ADK Project構成を生成する。

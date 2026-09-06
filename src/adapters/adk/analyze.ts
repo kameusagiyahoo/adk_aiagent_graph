@@ -45,13 +45,14 @@ const toolMapping = (config: ToolConfig): Pick<AdkNodeMapping, 'status' | 'adkPr
       const configured = config.transport === 'stdio' ? config.command.trim() : config.url.trim();
       return configured
         ? {
-            status: 'ready',
-            adkPrimitive: 'McpToolset',
+            status: 'partial',
+            adkPrimitive: 'McpToolset on LlmAgent / TODO deterministic workflow wrapper',
             notes: [
               config.transport === 'stdio'
                 ? `stdio command=${config.command} ${config.args}`.trim()
                 : `SSE URL=${config.url}`,
-              'McpToolsetを利用するADKコードを生成可能。',
+              'McpToolsetはLlmAgentへ付与可能。',
+              '現行の公開Graph Workflow APIではMCP Toolsetを決定論的な単独Nodeとして直接呼ぶMappingは未確定のためCode GeneratorではTODOにする。',
             ],
           }
         : {
@@ -105,6 +106,7 @@ const routerMapping = (node: GraphNode, outgoingEdges: GraphEdge[]): Pick<AdkNod
       outgoingEdges.length >= 2 ? `分岐先=${outgoingEdges.length}本。` : '2本以上の分岐先が必要。',
       keys.length === outgoingEdges.length ? `Route keys: ${keys.join(' / ') || 'なし'}` : 'Route key未設定のEdgeがある。',
       uniqueKeys.size === keys.length ? 'Route key重複なし。' : 'Route keyが重複している。',
+      'Conditionは現在自然言語の設計テキストなので、Python条件式への変換はCode GeneratorでTODOとして残す。',
     ],
   };
 };
@@ -132,7 +134,7 @@ export const analyzeAdkAdapter = (
         nodeName: node.name,
         nodeKind: node.kind,
         status: configured ? 'ready' : 'blocked',
-        adkPrimitive: 'LlmAgent in Workflow',
+        adkPrimitive: 'LlmAgent / Agent in Workflow',
         notes: [
           node.config.instruction.trim() ? 'Instruction設定済み。' : 'Instructionが未設定。',
           settings.defaultModel.trim()
@@ -219,11 +221,11 @@ export const analyzeAdkAdapter = (
   lines.push(
     '',
     '## Mapping basis',
-    '- Agent → `LlmAgent`をWorkflow nodeとして利用',
+    '- Agent → `Agent` / `LlmAgent`をWorkflow nodeとして利用',
     '- Router → `Event(route=...)`を返すFunction Node + route key辞書',
     '- HumanInput → `RequestInput`をyieldするFunction Node',
     '- Join → `JoinNode`',
-    '- MCP → `McpToolset`',
+    '- MCP → `McpToolset`はLlmAgentへ付与可能。単独の決定論的Graph Tool Nodeは現段階ではPARTIAL',
     '- Custom/HTTP/Database/File等 → FunctionToolまたはFunction Node wrapper',
   );
 

@@ -1,0 +1,53 @@
+.adk-code-preview {
+  width: min(980px, 100%);
+}
+
+.code-file-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.code-file-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.code-file-tab {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d7deea;
+  border-radius: 9px;
+  background: #fff;
+  color: #475467;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.code-file-tab--active {
+  border-color: #8796b0;
+  background: #eef2f7;
+  color: #172033;
+}
+
+.adk-code-preview__content {
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .adk-code-preview {
+    max-height: 91dvh;
+  }
+
+  .code-file-tabs {
+    padding: 7px 10px;
+  }
+}
