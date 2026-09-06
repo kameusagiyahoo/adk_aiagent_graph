@@ -5,6 +5,7 @@ import type {
   RuntimeExecutionResult,
   RuntimeValidationRequest,
   RuntimeValidationResult,
+  VllmCheckResult,
 } from './types';
 
 type LocalFetchInit = RequestInit & {
@@ -42,29 +43,21 @@ const requestJson = async <T>(
     const response = await fetch(`${baseUrl}${path}`, localInit);
     const text = await response.text();
     let body: unknown = null;
-    try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      body = text;
-    }
+    try { body = text ? JSON.parse(text) : null; } catch { body = text; }
 
     if (!response.ok) {
-      const detail =
-        typeof body === 'object' && body && 'detail' in body
-          ? String((body as { detail?: unknown }).detail ?? response.statusText)
-          : String(body || response.statusText);
+      const detail = typeof body === 'object' && body && 'detail' in body
+        ? String((body as { detail?: unknown }).detail ?? response.statusText)
+        : String(body || response.statusText);
       throw new Error(`Bridge ${response.status}: ${detail}`);
     }
-
     return body as T;
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new Error('Local Bridgeへの接続がタイムアウトしました。');
     }
     if (error instanceof TypeError) {
-      throw new Error(
-        'Local Bridgeへ接続できません。Bridgeの起動、URL、Token、ブラウザのローカルネットワーク許可を確認してください。',
-      );
+      throw new Error('Local Bridgeへ接続できません。Bridgeの起動、URL、Token、ブラウザのローカルネットワーク許可を確認してください。');
     }
     throw error;
   } finally {
@@ -75,24 +68,16 @@ const requestJson = async <T>(
 export const checkRuntimeBridge = (settings: RuntimeBridgeSettings) =>
   requestJson<RuntimeBridgeHealth>(settings, '/v1/health', { method: 'GET' }, 5000);
 
-export const validateWithRuntimeBridge = (
-  settings: RuntimeBridgeSettings,
-  request: RuntimeValidationRequest,
-) =>
-  requestJson<RuntimeValidationResult>(
-    settings,
-    '/v1/validate',
-    { method: 'POST', body: JSON.stringify(request) },
-    25000,
-  );
+export const validateWithRuntimeBridge = (settings: RuntimeBridgeSettings, request: RuntimeValidationRequest) =>
+  requestJson<RuntimeValidationResult>(settings, '/v1/validate', { method: 'POST', body: JSON.stringify(request) }, 25000);
 
-export const executeWithRuntimeBridge = (
-  settings: RuntimeBridgeSettings,
-  request: RuntimeExecutionRequest,
-) =>
-  requestJson<RuntimeExecutionResult>(
+export const executeWithRuntimeBridge = (settings: RuntimeBridgeSettings, request: RuntimeExecutionRequest) =>
+  requestJson<RuntimeExecutionResult>(settings, '/v1/execute', { method: 'POST', body: JSON.stringify(request) }, 120000);
+
+export const checkVllmWithRuntimeBridge = (settings: RuntimeBridgeSettings) =>
+  requestJson<VllmCheckResult>(
     settings,
-    '/v1/execute',
-    { method: 'POST', body: JSON.stringify(request) },
-    120000,
+    '/v1/vllm-check',
+    { method: 'POST', body: JSON.stringify({ baseUrl: settings.vllmBaseUrl }) },
+    8000,
   );
