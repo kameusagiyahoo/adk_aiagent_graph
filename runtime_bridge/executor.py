@@ -3,6 +3,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -174,16 +175,29 @@ def _failed(message: str) -> dict[str, Any]:
     return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": message}
 
 
+def _override_agent_model(content: str, model: str) -> str:
+    safe_model = model.strip().replace("\n", "").replace("\r", "")
+    if not safe_model:
+        return content
+    expression = f'LiteLlm(model={json.dumps("openai/" + safe_model)})'
+    updated, count = re.subn(r'LiteLlm\(model="openai/[^"\\]+"\)', expression, content, count=1)
+    return updated if count else content
+
+
 def execute_generated_project(
     package_name: str,
     files: list[dict[str, str]],
     user_text: str,
     *,
     mode: str,
+    model: str,
     vllm_base_url: str | None = None,
 ) -> dict[str, Any]:
     if mode not in {"openai", "vllm"}:
         return _failed("Runtime modeはopenaiまたはvllmを指定してください。")
+    model = model.strip()
+    if not model:
+        return _failed("Model名が空です。")
 
     openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     vllm_api_key = os.environ.get("AGD_VLLM_API_KEY", "").strip() or "local-vllm"
@@ -212,6 +226,8 @@ def execute_generated_project(
                 raise ValueError(f"duplicate file path: {key}")
             seen.add(key)
             content = str(item.get("content", ""))
+            if key == "agent.py":
+                content = _override_agent_model(content, model)
             size = len(content.encode("utf-8"))
             if size > MAX_FILE_BYTES:
                 raise ValueError(f"file too large: {key}")
@@ -233,11 +249,7 @@ def execute_generated_project(
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text(content, encoding="utf-8")
 
-        safe_env = {
-            key: os.environ[key]
-            for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP")
-            if key in os.environ
-        }
+        safe_env = {key: os.environ[key] for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP") if key in os.environ}
         safe_env.update({
             "HOME": temp_dir,
             "PYTHONIOENCODING": "utf-8",
