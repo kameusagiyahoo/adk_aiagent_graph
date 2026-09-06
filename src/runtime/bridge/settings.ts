@@ -1,11 +1,16 @@
-import type { RuntimeBridgeSettings } from './types';
+import type { RuntimeBridgeSettings, RuntimeMode } from './types';
 
-const STORAGE_KEY = 'agent-graph-designer.runtime-bridge.v2';
+const STORAGE_KEY = 'agent-graph-designer.runtime-bridge.v3';
 
 export const defaultRuntimeBridgeSettings: RuntimeBridgeSettings = {
   baseUrl: 'http://127.0.0.1:8765',
   token: '',
+  mode: 'mock',
+  vllmBaseUrl: 'http://127.0.0.1:8000/v1',
 };
+
+const normalizeMode = (value: unknown): RuntimeMode =>
+  value === 'openai' || value === 'vllm' || value === 'mock' ? value : 'mock';
 
 export const loadRuntimeBridgeSettings = (): RuntimeBridgeSettings => {
   if (typeof window === 'undefined') return defaultRuntimeBridgeSettings;
@@ -20,6 +25,11 @@ export const loadRuntimeBridgeSettings = (): RuntimeBridgeSettings => {
           ? value.baseUrl.trim()
           : defaultRuntimeBridgeSettings.baseUrl,
       token: typeof value.token === 'string' ? value.token : '',
+      mode: normalizeMode(value.mode),
+      vllmBaseUrl:
+        typeof value.vllmBaseUrl === 'string' && value.vllmBaseUrl.trim()
+          ? value.vllmBaseUrl.trim()
+          : defaultRuntimeBridgeSettings.vllmBaseUrl,
     };
   } catch (error) {
     console.warn('Runtime Bridge settings could not be loaded.', error);
