@@ -1,44 +1,27 @@
 # Roadmap
 
-## STEP 1 — Canvas MVP (done)
-- Node / Edge editing
+## STEP 1 — Canvas MVP — done
+- Node / Edge
 - Inspector
 - localStorage
-- JSON Import / Export
+- JSON Export / Import
 
-## STEP 2 — Design intelligence (done)
+## STEP 2 — Graph intelligence — done
 - Validator
 - Specification Generator
 - Prompt Generator
 
-## STEP 3 — Google ADK Adapter (done)
+## STEP 3 — ADK Adapter / Codegen — done
 - ADK readiness
-- Router routeKey
-- Tool structured config
-- ADK Python generator
-- Project ZIP export
-- Static check
+- Python code generation
+- ZIP export
 
-## STEP 4 — Local Runtime
-
-### STEP 4A — done
-- Local Bridge
-- Python syntax check
-- google-adk import check
-- root_agent / Workflow construction check
-
-### STEP 4B — done
-- Local ADK execution
+## STEP 4 — Runtime / Debug — current
+- Local Bridge validation
 - ADK Event Trace
-- loopback-only network policy
+- Canvas trace visualization
+- LLM不要のMock Simulation
 
-### STEP 4C — current
-- Ollama / LiteLLM local model support
-- Ollama health check through Local Bridge
-- Runtime Trace → Canvas node/edge visualization
-
-## Next
-- streaming execution status
-- HumanInput resume
-- richer Tool runtime implementations
-- local execution history
+### Next
+- Runtime mode switch: Mock / OpenAI API / vLLM Local
+- Streaming trace

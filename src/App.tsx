@@ -17,6 +17,7 @@ import { generateGraphSpecification } from './core/specification/generate';
 import { validateGraphProject } from './core/validation/validate';
 import { loadRuntimeBridgeSettings, saveRuntimeBridgeSettings } from './runtime/bridge/settings';
 import type { RuntimeExecutionResult } from './runtime/bridge/types';
+import type { SimulationResult } from './runtime/simulation/types';
 import { downloadGraphProjectJson, parseGraphProjectJson } from './storage/json';
 import { loadProjectFromLocalStorage, saveProjectToLocalStorage } from './storage/localStorage';
 import { AdkAdapterPreview } from './ui/AdkAdapterPreview';
@@ -35,6 +36,7 @@ export default function App() {
   const [adkSettings, setAdkSettings] = useState(loadAdkAdapterSettings);
   const [runtimeSettings, setRuntimeSettings] = useState(loadRuntimeBridgeSettings);
   const [runtimeExecution, setRuntimeExecution] = useState<RuntimeExecutionResult | null>(null);
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [isSpecificationOpen, setSpecificationOpen] = useState(false);
@@ -57,6 +59,10 @@ export default function App() {
   const selectedEdgeIssues = selectedEdgeId ? validation.issues.filter((issue) => issue.edgeId === selectedEdgeId) : [];
 
   const runtimeVisual = useMemo(() => {
+    if (simulationResult) {
+      return { nodeOrder: simulationResult.nodeOrder, edgeIds: simulationResult.edgeIds };
+    }
+
     const symbolToNodeId = new Map(Object.entries(adkGeneration.nodeSymbols).map(([nodeId, symbol]) => [symbol, nodeId]));
     const order = new Map<string, number>();
     runtimeExecution?.trace.forEach((event) => {
@@ -70,7 +76,7 @@ export default function App() {
       if (edge) edgeIds.add(edge.id);
     }
     return { nodeOrder: Object.fromEntries(order.entries()), edgeIds: [...edgeIds] };
-  }, [adkGeneration.nodeSymbols, project.edges, runtimeExecution]);
+  }, [adkGeneration.nodeSymbols, project.edges, runtimeExecution, simulationResult]);
 
   useEffect(() => { saveProjectToLocalStorage(project); }, [project]);
   useEffect(() => { saveAdkAdapterSettings(adkSettings); }, [adkSettings]);
@@ -81,6 +87,7 @@ export default function App() {
       const kindIndex = current.nodes.filter((node) => node.kind === kind).length;
       return { ...current, nodes: [...current.nodes, createGraphNode(kind, kindIndex, current.nodes.length)] };
     });
+    setSimulationResult(null);
   };
   const updateNodes: React.ComponentProps<typeof Canvas>['onNodesChange'] = (nodes) => setProject((current) => ({ ...current, nodes }));
   const connectNodes: React.ComponentProps<typeof Canvas>['onConnectNodes'] = (sourceNodeId, targetNodeId) => {
@@ -89,16 +96,18 @@ export default function App() {
       if (duplicate) return current;
       return { ...current, edges: [...current.edges, createGraphEdge(sourceNodeId, targetNodeId)] };
     });
+    setSimulationResult(null);
   };
-  const updateNode = (node: GraphNode) => setProject((current) => replaceGraphNodeInProject(current, node));
-  const updateEdge = (edge: GraphEdge) => setProject((current) => replaceGraphEdgeInProject(current, edge));
-  const deleteNode = (nodeId: string) => { setProject((current) => removeGraphNodeFromProject(current, nodeId)); setSelectedNodeId(null); };
-  const deleteEdge = (edgeId: string) => { setProject((current) => removeGraphEdgeFromProject(current, edgeId)); setSelectedEdgeId(null); };
+  const updateNode = (node: GraphNode) => { setProject((current) => replaceGraphNodeInProject(current, node)); setSimulationResult(null); };
+  const updateEdge = (edge: GraphEdge) => { setProject((current) => replaceGraphEdgeInProject(current, edge)); setSimulationResult(null); };
+  const deleteNode = (nodeId: string) => { setProject((current) => removeGraphNodeFromProject(current, nodeId)); setSelectedNodeId(null); setSimulationResult(null); };
+  const deleteEdge = (edgeId: string) => { setProject((current) => removeGraphEdgeFromProject(current, edgeId)); setSelectedEdgeId(null); setSimulationResult(null); };
 
   const importProject = async (file: File) => {
     try {
       setProject(parseGraphProjectJson(await file.text()));
       setRuntimeExecution(null);
+      setSimulationResult(null);
       closeOverlays();
       window.alert('Graph JSONを読み込みました。');
     } catch (error) {
@@ -122,7 +131,7 @@ export default function App() {
         <ValidationSummary result={validation} />
         <Canvas nodes={project.nodes} edges={project.edges} validationIssues={validation.issues} selectedNodeId={selectedNodeId} selectedEdgeId={selectedEdgeId} runtimeNodeOrder={runtimeVisual.nodeOrder} runtimeEdgeIds={runtimeVisual.edgeIds} onNodesChange={updateNodes} onConnectNodes={connectNodes} onSelectNode={setSelectedNodeId} onSelectEdge={setSelectedEdgeId} />
       </section>
-      <footer className="status-bar">STEP 4C — OpenAI API / ADK Event TraceをCanvasへ反映</footer>
+      <footer className="status-bar">STEP 4C — Mock Simulationを標準デバッグ経路に追加 / 実LLM接続は任意</footer>
 
       <NodeInspector node={selectedNode} issues={selectedNodeIssues} onChange={updateNode} onDelete={deleteNode} onClose={() => setSelectedNodeId(null)} />
       <EdgeInspector edge={selectedEdge} sourceNode={selectedEdgeSource} targetNode={selectedEdgeTarget} issues={selectedEdgeIssues} onChange={updateEdge} onDelete={deleteEdge} onClose={() => setSelectedEdgeId(null)} />
@@ -131,7 +140,7 @@ export default function App() {
       {isPromptOpen && <PromptPreview projectName={project.name} markdown={codingPrompt.markdown} errorCount={codingPrompt.validationErrorCount} warningCount={codingPrompt.validationWarningCount} onClose={() => setPromptOpen(false)} />}
       {isAdkOpen && <AdkAdapterPreview projectName={project.name} analysis={adkAnalysis} settings={adkSettings} onSettingsChange={setAdkSettings} onClose={() => setAdkOpen(false)} />}
       {isAdkCodeOpen && <AdkCodePreview projectName={project.name} generation={adkGeneration} onClose={() => setAdkCodeOpen(false)} />}
-      {isRuntimeOpen && <RuntimeValidationPreview generation={adkGeneration} settings={runtimeSettings} adkSettings={adkSettings} onSettingsChange={setRuntimeSettings} onAdkSettingsChange={setAdkSettings} onExecutionResult={setRuntimeExecution} onClose={() => setRuntimeOpen(false)} />}
+      {isRuntimeOpen && <RuntimeValidationPreview project={project} generation={adkGeneration} settings={runtimeSettings} adkSettings={adkSettings} onSettingsChange={setRuntimeSettings} onAdkSettingsChange={setAdkSettings} onExecutionResult={(next) => { setRuntimeExecution(next); if (next) setSimulationResult(null); }} onSimulationResult={(next) => { setSimulationResult(next); if (next) setRuntimeExecution(null); }} onClose={() => setRuntimeOpen(false)} />}
     </main>
   );
 }
