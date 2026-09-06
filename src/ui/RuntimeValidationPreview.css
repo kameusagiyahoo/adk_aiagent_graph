@@ -1,0 +1,151 @@
+.runtime-preview {
+  width: min(760px, 100%);
+}
+
+.runtime-preview__body {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.runtime-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dfe5ef;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.runtime-card--success {
+  border-color: #a9d8c4;
+  background: #f4fbf7;
+}
+
+.runtime-card--note {
+  background: #f8fafc;
+}
+
+.runtime-card__title {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.runtime-card small,
+.runtime-meta {
+  color: #667085;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.runtime-actions,
+.runtime-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.runtime-actions {
+  justify-content: flex-end;
+}
+
+.runtime-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.runtime-error {
+  padding: 10px 12px;
+  border: 1px solid #efb7b7;
+  border-radius: 12px;
+  background: #fff7f7;
+  color: #9f2f2f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.runtime-result-badge {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.runtime-result-badge--passed {
+  background: #e9f7ef;
+  color: #216746;
+}
+
+.runtime-result-badge--failed {
+  background: #fff0f0;
+  color: #a12f2f;
+}
+
+.runtime-checks {
+  display: grid;
+  gap: 7px;
+}
+
+.runtime-check {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: start;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid #e3e8f0;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.runtime-check > strong {
+  font-size: 9px;
+}
+
+.runtime-check > div > div {
+  color: #344054;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.runtime-check > div > small,
+.runtime-check > span {
+  color: #7a8699;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.runtime-check--pass > strong {
+  color: #24714d;
+}
+
+.runtime-check--fail > strong {
+  color: #a12f2f;
+}
+
+.runtime-check--skip > strong {
+  color: #7a8699;
+}
+
+@media (max-width: 640px) {
+  .runtime-preview {
+    max-height: 92dvh;
+  }
+
+  .runtime-preview__body {
+    padding: 10px;
+  }
+
+  .runtime-check {
+    grid-template-columns: 46px 1fr;
+  }
+
+  .runtime-check > span {
+    grid-column: 2;
+  }
+}
