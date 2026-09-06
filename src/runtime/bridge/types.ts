@@ -7,6 +7,7 @@ export type RuntimeBridgeSettings = {
   token: string;
   mode: RuntimeMode;
   vllmBaseUrl: string;
+  vllmModel: string;
 };
 
 export type RuntimeBridgeHealth = {
@@ -55,6 +56,7 @@ export type RuntimeTraceEvent = {
 export type RuntimeExecutionRequest = RuntimeValidationRequest & {
   inputText: string;
   mode: Exclude<RuntimeMode, 'mock'>;
+  model: string;
   vllmBaseUrl?: string;
 };
 
