@@ -3,6 +3,7 @@ import type { AdkGeneratedFile } from '../../adapters/adk/codegenTypes';
 export type RuntimeBridgeSettings = {
   baseUrl: string;
   token: string;
+  ollamaBaseUrl: string;
 };
 
 export type RuntimeBridgeHealth = {
@@ -10,6 +11,13 @@ export type RuntimeBridgeHealth = {
   version: string;
   pythonVersion: string;
   adkVersion: string;
+};
+
+export type OllamaHealth = {
+  ok: boolean;
+  baseUrl: string;
+  models: string[];
+  error?: string | null;
 };
 
 export type RuntimeCheckStatus = 'pass' | 'fail' | 'skip';
@@ -48,6 +56,7 @@ export type RuntimeTraceEvent = {
 
 export type RuntimeExecutionRequest = RuntimeValidationRequest & {
   inputText: string;
+  ollamaBaseUrl: string;
 };
 
 export type RuntimeExecutionResult = {

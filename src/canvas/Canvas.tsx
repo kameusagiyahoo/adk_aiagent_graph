@@ -32,6 +32,8 @@ type CanvasProps = {
   validationIssues: ValidationIssue[];
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
+  runtimeNodeOrder: Record<string, number>;
+  runtimeEdgeIds: string[];
   onNodesChange: (nodes: GraphNode[]) => void;
   onConnectNodes: (sourceNodeId: string, targetNodeId: string) => void;
   onSelectNode: (nodeId: string | null) => void;
@@ -44,39 +46,34 @@ export function Canvas({
   validationIssues,
   selectedNodeId,
   selectedEdgeId,
+  runtimeNodeOrder,
+  runtimeEdgeIds,
   onNodesChange,
   onConnectNodes,
   onSelectNode,
   onSelectEdge,
 }: CanvasProps) {
+  const runtimeEdges = new Set(runtimeEdgeIds);
   const canvasNodes = nodes.map((node) =>
     graphNodeToCanvasNode(
       node,
       node.id === selectedNodeId,
       validationIssues.filter((issue) => issue.nodeId === node.id),
+      runtimeNodeOrder[node.id],
     ),
   );
   const canvasEdges = edges.map((edge) =>
-    graphEdgeToCanvasEdge(edge, edge.id === selectedEdgeId),
+    graphEdgeToCanvasEdge(edge, edge.id === selectedEdgeId, runtimeEdges.has(edge.id)),
   );
 
   const handleNodesChange = (changes: NodeChange[]) => {
     const nextCanvasNodes = applyNodeChanges(changes, canvasNodes);
     const positions = new Map(nextCanvasNodes.map((node) => [node.id, node.position]));
-
-    onNodesChange(
-      nodes.map((node) => ({
-        ...node,
-        position: positions.get(node.id) ?? node.position,
-      })),
-    );
+    onNodesChange(nodes.map((node) => ({ ...node, position: positions.get(node.id) ?? node.position })));
   };
 
   const handleConnect = (connection: Connection) => {
-    if (!connection.source || !connection.target) {
-      return;
-    }
-
+    if (!connection.source || !connection.target) return;
     onConnectNodes(connection.source, connection.target);
   };
 
@@ -88,18 +85,9 @@ export function Canvas({
         nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onConnect={handleConnect}
-        onNodeClick={(_, node) => {
-          onSelectEdge(null);
-          onSelectNode(node.id);
-        }}
-        onEdgeClick={(_, edge) => {
-          onSelectNode(null);
-          onSelectEdge(edge.id);
-        }}
-        onPaneClick={() => {
-          onSelectNode(null);
-          onSelectEdge(null);
-        }}
+        onNodeClick={(_, node) => { onSelectEdge(null); onSelectNode(node.id); }}
+        onEdgeClick={(_, edge) => { onSelectNode(null); onSelectEdge(edge.id); }}
+        onPaneClick={() => { onSelectNode(null); onSelectEdge(null); }}
         fitView
         minZoom={0.25}
         maxZoom={2}

@@ -5,6 +5,7 @@ const STORAGE_KEY = 'agent-graph-designer.runtime-bridge.v1';
 export const defaultRuntimeBridgeSettings: RuntimeBridgeSettings = {
   baseUrl: 'http://127.0.0.1:8765',
   token: '',
+  ollamaBaseUrl: 'http://127.0.0.1:11434',
 };
 
 export const loadRuntimeBridgeSettings = (): RuntimeBridgeSettings => {
@@ -20,6 +21,10 @@ export const loadRuntimeBridgeSettings = (): RuntimeBridgeSettings => {
           ? value.baseUrl.trim()
           : defaultRuntimeBridgeSettings.baseUrl,
       token: typeof value.token === 'string' ? value.token : '',
+      ollamaBaseUrl:
+        typeof value.ollamaBaseUrl === 'string' && value.ollamaBaseUrl.trim()
+          ? value.ollamaBaseUrl.trim()
+          : defaultRuntimeBridgeSettings.ollamaBaseUrl,
     };
   } catch (error) {
     console.warn('Runtime Bridge settings could not be loaded.', error);

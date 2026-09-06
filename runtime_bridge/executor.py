@@ -5,12 +5,39 @@ import os
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
 
 from validator import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES, PACKAGE_RE, _safe_relative_path
 
 RESULT_PREFIX = "__AGD_EXEC_RESULT__="
+
+
+def _loopback_base_url(value: str) -> str:
+    candidate = value.strip().rstrip("/")
+    parsed = urlparse(candidate)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("Ollama URLはhttp(s)://host:port形式にしてください。")
+    if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        raise ValueError("Ollamaはlocalhost / 127.0.0.1 / ::1のみ許可します。")
+    return candidate
+
+
+def probe_ollama(base_url: str) -> dict[str, Any]:
+    try:
+        safe_url = _loopback_base_url(base_url)
+        with urllib.request.urlopen(f"{safe_url}/api/tags", timeout=3) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        models = [
+            str(item.get("name", ""))
+            for item in payload.get("models", [])
+            if isinstance(item, dict) and item.get("name")
+        ]
+        return {"ok": True, "baseUrl": safe_url, "models": models, "error": None}
+    except Exception as exc:
+        return {"ok": False, "baseUrl": base_url, "models": [], "error": f"{type(exc).__name__}: {exc}"}
 
 
 def _runtime_script() -> str:
@@ -139,7 +166,17 @@ print(PREFIX + json.dumps(result, ensure_ascii=False))
 '''
 
 
-def execute_generated_project(package_name: str, files: list[dict[str, str]], user_text: str) -> dict[str, Any]:
+def execute_generated_project(
+    package_name: str,
+    files: list[dict[str, str]],
+    user_text: str,
+    ollama_base_url: str,
+) -> dict[str, Any]:
+    try:
+        safe_ollama_url = _loopback_base_url(ollama_base_url)
+    except ValueError as exc:
+        return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": str(exc)}
+
     if not PACKAGE_RE.fullmatch(package_name):
         return {"status": "failed", "invocationId": "", "finalText": "", "trace": [], "error": "Python package名が不正です。"}
     if not files or len(files) > MAX_FILES:
@@ -179,10 +216,17 @@ def execute_generated_project(package_name: str, files: list[dict[str, str]], us
 
         safe_env = {
             key: os.environ[key]
-            for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "OLLAMA_API_BASE", "OPENAI_API_BASE")
+            for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP")
             if key in os.environ
         }
-        safe_env.update({"HOME": temp_dir, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUTF8": "1"})
+        safe_env.update({
+            "HOME": temp_dir,
+            "PYTHONIOENCODING": "utf-8",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONUTF8": "1",
+            "OLLAMA_API_BASE": safe_ollama_url,
+            "NO_PROXY": "localhost,127.0.0.1,::1",
+        })
 
         try:
             process = subprocess.run(

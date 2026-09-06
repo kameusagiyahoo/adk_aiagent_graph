@@ -28,4 +28,5 @@ export type AdkCodeGeneration = {
   isRunnable: boolean;
   warnings: string[];
   staticCheck: AdkStaticCheckResult;
+  nodeSymbols: Record<string, string>;
 };

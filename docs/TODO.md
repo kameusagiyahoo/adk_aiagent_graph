@@ -1,19 +1,14 @@
 # TODO
 
-- [x] Canvas表示
-- [x] Agent追加
-- [x] Agent移動
-- [x] Router / Tool / HumanInput / Join
-- [x] Edge
-- [x] Node削除
-- [x] Inspector
-- [x] localStorage
-- [x] JSON Export / Import
-
-## Next
-- [ ] Graph IR詳細化
-- [ ] Validator
-- [ ] Validation UI
-- [ ] Specification Generator
-- [ ] Prompt Generator
-- [ ] ADK Adapter
+- [x] Canvas / Node / Edge editing
+- [x] Validator
+- [x] Specification / Prompt Generator
+- [x] Google ADK Adapter / Python Generator / ZIP
+- [x] Local Bridge runtime validation
+- [x] Local ADK execution / Event Trace
+- [x] Ollama + LiteLLM local model support
+- [x] Runtime Trace visualization on Canvas
+- [ ] Streaming execution status
+- [ ] HumanInput resume
+- [ ] Tool runtime implementations
+- [ ] Local execution history

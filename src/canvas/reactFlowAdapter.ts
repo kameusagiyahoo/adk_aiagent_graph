@@ -10,6 +10,7 @@ export const graphNodeToCanvasNode = (
   node: GraphNode,
   selected = false,
   issues: ValidationIssue[] = [],
+  runtimeOrder?: number,
 ): CanvasNode => ({
   id: node.id,
   type: node.kind,
@@ -23,10 +24,15 @@ export const graphNodeToCanvasNode = (
       errorCount: issues.filter((issue) => issue.severity === 'error').length,
       warningCount: issues.filter((issue) => issue.severity === 'warning').length,
     },
+    runtimeOrder,
   },
 });
 
-export const graphEdgeToCanvasEdge = (edge: GraphEdge, selected = false): CanvasEdge => ({
+export const graphEdgeToCanvasEdge = (
+  edge: GraphEdge,
+  selected = false,
+  runtimeVisited = false,
+): CanvasEdge => ({
   id: edge.id,
   source: edge.sourceNodeId,
   sourceHandle: edge.sourcePortId,
@@ -38,4 +44,6 @@ export const graphEdgeToCanvasEdge = (edge: GraphEdge, selected = false): Canvas
   interactionWidth: 30,
   labelBgPadding: [6, 3],
   labelBgBorderRadius: 6,
+  animated: runtimeVisited,
+  style: runtimeVisited ? { strokeWidth: 4, stroke: '#24714d' } : undefined,
 });

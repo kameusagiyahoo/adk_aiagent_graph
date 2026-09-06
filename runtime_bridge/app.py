@@ -10,10 +10,10 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from executor import execute_generated_project
+from executor import execute_generated_project, probe_ollama
 from validator import validate_generated_project
 
-BRIDGE_VERSION = "0.2.0"
+BRIDGE_VERSION = "0.3.0"
 BRIDGE_TOKEN = os.environ.get("AGD_BRIDGE_TOKEN") or secrets.token_urlsafe(24)
 DEFAULT_ORIGINS = [
     "https://kameusagiyahoo.github.io",
@@ -56,6 +56,11 @@ class ValidateRequest(BaseModel):
 
 class ExecuteRequest(ValidateRequest):
     inputText: str = Field(min_length=1, max_length=12000)
+    ollamaBaseUrl: str = Field(min_length=1, max_length=240)
+
+
+class OllamaHealthRequest(BaseModel):
+    baseUrl: str = Field(min_length=1, max_length=240)
 
 
 def require_token(
@@ -82,6 +87,11 @@ def health():
     }
 
 
+@app.post("/v1/ollama/health", dependencies=[Depends(require_token)])
+def ollama_health(request: OllamaHealthRequest):
+    return probe_ollama(request.baseUrl)
+
+
 @app.post("/v1/validate", dependencies=[Depends(require_token)])
 def validate(request: ValidateRequest):
     return validate_generated_project(
@@ -96,6 +106,7 @@ def execute(request: ExecuteRequest):
         request.packageName,
         [item.model_dump() for item in request.files],
         request.inputText,
+        request.ollamaBaseUrl,
     )
 
 
@@ -109,4 +120,5 @@ if __name__ == "__main__":
     print("TokenをWebアプリの Runtime 画面へ入力してください。")
     print("Bridgeは127.0.0.1にのみbindします。")
     print("Local Executionはlocalhost以外への通信を遮断します。")
+    print("Ollama default: http://127.0.0.1:11434")
     uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
